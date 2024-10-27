@@ -12,12 +12,17 @@
 </head>
 
 <body>
-  <div id="top"> <select name="select-region" id="select-region">
+  <div id="top">
+    <label for="select-region">Region:</label>
+    <select name="select-region" id="select-region">
       <option value="EU">EU</option>
       <option value="NA">NA</option>
     </select>
+    <label for="select-world">World:</label>
     <select name="select-world" id="select-world"></select>
+    <label for="search-guild">Search:</label>
     <input type="search" name="search-guild" id="search-guild">
+    <span id="counter"></span>
   </div>
   <div id="results"></div>
 </body>

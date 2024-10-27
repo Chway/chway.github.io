@@ -2,6 +2,7 @@ body {
   background-color: #111;
   color: #ddd;
   font-family: monospace;
+  font-size: 1.1em;
 }
 
 #top {
@@ -10,18 +11,28 @@ body {
   top: 0;
   background-color: #000;
   height: 2em;
+  width: 100vw;
+  display: table-cell;
+  vertical-align: middle;
+  padding-left: .5em;
 }
 
 #results {
-  margin-top: 1em;
-  margin-left: .5em;
+  margin: .75em;
 }
 #select-region,
-#select-world {
+#select-world,
+#search-guild {
   background-color: #000;
   color: #ddd;
   border: 1px solid #333;
   border-radius: 0;
+}
+
+#select-region:focus,
+#select-world:focus,
+#search-guild:focus {
+  outline: none;
 }
 
 .result-name {

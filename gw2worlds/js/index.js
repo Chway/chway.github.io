@@ -50,6 +50,7 @@ document.querySelector("#search-guild").addEventListener("search", (event) => {
   if (query.length === 0 && !worldId) {
     const elementResults = document.querySelectorAll(".result");
     for (const element of elementResults) element.remove();
+    document.querySelector("#counter").textContent = "";
     return;
   }
 
@@ -117,6 +118,7 @@ document.querySelector("#search-guild").addEventListener("search", (event) => {
       p.appendChild(spanTag);
       if (!worldId) p.appendChild(spanWorld);
       document.querySelector("#results").appendChild(p);
+      document.querySelector("#counter").textContent = `(${sortedNameTag.length} guild${sortedNameTag.length > 1 ? "s" : ""})`;
     }
     window.scrollTo(0, 0);
   } else {
@@ -138,7 +140,10 @@ document.querySelector("#select-world").addEventListener("change", (event) => {
   const elementResults = document.querySelectorAll("#results .result");
   for (const result of elementResults) result.remove();
 
-  if (!id && !elementSearchGuild.value) return;
+  if (!id && !elementSearchGuild.value) {
+    document.querySelector("#counter").textContent = "";
+    return;
+  }
 
   if (elementSearchGuild.value) {
     elementSearchGuild.dispatchEvent(new Event("search"));
@@ -169,6 +174,7 @@ document.querySelector("#select-world").addEventListener("change", (event) => {
     p.appendChild(spanTag);
     document.querySelector("#results").appendChild(p);
   }
+  document.querySelector("#counter").textContent = `(${sortedNameTag.length} guild${sortedNameTag.length > 1 ? "s" : ""})`;
   window.scrollTo(0, 0);
 });
 
