@@ -1,0 +1,49 @@
+body {
+  background-color: #111;
+  color: #ddd;
+  font-family: monospace;
+}
+
+#top {
+  border-bottom: 1px solid #333;
+  position: sticky;
+  top: 0;
+  background-color: #000;
+  height: 2em;
+}
+
+#results {
+  margin-top: 1em;
+  margin-left: .5em;
+}
+#select-region,
+#select-world {
+  background-color: #000;
+  color: #ddd;
+  border: 1px solid #333;
+  border-radius: 0;
+}
+
+.result-name {
+  font-weight: bold;
+}
+
+.result-world {
+  color: salmon;
+  margin-left: .25em;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.result-world:hover {
+  text-decoration: none;
+}
+
+.result-tag {
+  color: darkturquoise;
+  margin-left: .25em;
+}
+
+.wrong-query {
+  background-color: lightpink;
+}
