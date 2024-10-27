@@ -32,21 +32,23 @@ const allWorlds = [
 const links = {};
 
 function setUrl() {
+  DEBUG && console.log("setUrl");
   const elementSelectRegion = document.querySelector("#select-region");
   const region = elementSelectRegion.value.toLowerCase();
   const elementSelectWorld = document.querySelector("#select-world");
-  const worldId = elementSelectWorld.options[elementSelectWorld.selectedIndex].dataset.id;
+  const worldId = elementSelectWorld.options[elementSelectWorld.selectedIndex]?.dataset.id;
   const elementSearchGuild = document.querySelector("#search-guild");
   const query = elementSearchGuild.value;
   const paramRegion = `region=${region}`;
   const paramWorld = `&world=${worldId}`;
-  const paramsearch = `&search=${query}`;
-  history.replaceState(null, "", `?${paramRegion}${worldId ? paramWorld : ""}${query ? paramsearch : ""}`);
+  const paramSearch = `&search=${query}`;
+  history.replaceState(null, "", `?${paramRegion}${worldId ? paramWorld : ""}${query ? paramSearch : ""}`);
 }
 
 function toURL() {
+  DEBUG && console.log("toUrl");
   const params = new URLSearchParams(window.location.search);
-  const paramRegion = params.get("region");
+  const paramRegion = params.get("region") || "eu";
   const paramWorld = params.get("world");
   const paramSearch = params.get("search");
 
@@ -85,6 +87,7 @@ function toURL() {
 }
 
 function getReadableWorld(id) {
+  DEBUG && console.log("getReadableWorld");
   for (const w of allWorlds) {
     if (Number.parseInt(id, 10) === w.id) {
       return w.en;
@@ -186,10 +189,10 @@ document.querySelector("#search-guild").addEventListener("search", (event) => {
 
 document.querySelector("#select-region").addEventListener("change", (event) => {
   DEBUG && console.log("select-region");
-  setUrl();
   populateDropDown();
 
   if (event.isTrusted) {
+    setUrl();
     const selectWorld = document.querySelector("#select-world");
     DEBUG && console.log("search-region", "elementSelectWorld.dispatchEvent");
     selectWorld.dispatchEvent(new Event("change"));
@@ -245,6 +248,7 @@ document.querySelector("#select-world").addEventListener("change", (event) => {
 });
 
 function populateDropDown() {
+  DEBUG && console.log("populateDropDown");
   const selectWorld = document.querySelector("#select-world");
   selectWorld.options.length = 0;
   const option = document.createElement("option");
@@ -263,9 +267,10 @@ function populateDropDown() {
 }
 
 async function Job() {
+  DEBUG && console.log("Job");
   const promises = [fetch(jsons.eu).then((response) => response.json()), fetch(jsons.na).then((response) => response.json())];
   [links.eu, links.na] = await Promise.all(promises);
-  populateDropDown();
+  // populateDropDown();
   toURL();
 }
 
