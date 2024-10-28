@@ -48,10 +48,10 @@ async function setUrl() {
   const paramRegion = `region=${region}`;
   const paramWorld = `&world=${worldId}`;
   const paramSearch = `&search=${query}`;
-  document.title = `GW2Worlds - ${worldId ? getReadableWorld(worldId) : elementSelectRegion.value}${query ? " - Search" : ""}`;
 
   const state = { region: region, world: worldId, search: query };
   history.pushState(state, "", `?${paramRegion}${worldId ? paramWorld : ""}${query ? paramSearch : ""}`);
+  document.title = `GW2Worlds - ${worldId ? getReadableWorld(worldId) : elementSelectRegion.value}${query ? " - Search" : ""}`;
 }
 
 async function toURL(prevState) {
