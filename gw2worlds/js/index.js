@@ -1,6 +1,7 @@
+let PREV = false;
 const DEBUG = false;
-const jsons = { eu: "linksEU.json", na: "linksNA.json" };
-const allWorlds = [
+const JSONS = { eu: "linksEU.json", na: "linksNA.json" };
+const ALLWORLDS = [
   { id: 11001, en: "Moogooloo" },
   { id: 11002, en: "Rall's Rest" },
   { id: 11003, en: "Domain of Torment" },
@@ -29,7 +30,12 @@ const allWorlds = [
   { id: 12014, en: "Great House Aviary" },
   { id: 12015, en: "Bava Nisos" },
 ];
-const links = {};
+const LINKS = {};
+
+window.addEventListener("popstate", async (event) => {
+  PREV = true;
+  await toURL(event.state);
+});
 
 async function setUrl() {
   DEBUG && console.log("setUrl");
@@ -42,22 +48,26 @@ async function setUrl() {
   const paramRegion = `region=${region}`;
   const paramWorld = `&world=${worldId}`;
   const paramSearch = `&search=${query}`;
-  history.replaceState(null, "", `?${paramRegion}${worldId ? paramWorld : ""}${query ? paramSearch : ""}`);
+  document.title = `GW2Worlds - ${worldId ? getReadableWorld(worldId) : elementSelectRegion.value}${query ? " - Search" : ""}`;
+
+  const state = { region: region, world: worldId, search: query };
+  history.pushState(state, "", `?${paramRegion}${worldId ? paramWorld : ""}${query ? paramSearch : ""}`);
 }
 
-async function toURL() {
-  DEBUG && console.log("toUrl");
+async function toURL(prevState) {
+  DEBUG && console.log("toUrl", prevState);
   const params = new URLSearchParams(window.location.search);
-  let paramRegion = (params.get("region") || "eu").toLowerCase();
-  const paramWorld = params.get("world");
-  const paramSearch = params.get("search");
+  let paramRegion = prevState ? prevState.region : (params.get("region") || "eu").toLowerCase();
+  let paramWorld = prevState ? prevState.world : params.get("world");
+  const paramSearch = prevState ? prevState.search : params.get("search");
   const elementSelectRegion = document.querySelector("#select-region");
   const elementSelectWorld = document.querySelector("#select-world");
   const elementSearchGuild = document.querySelector("#search-guild");
+  if (prevState && !prevState.world) paramWorld = 1;
   const badUrl = { region: true, world: Boolean(paramWorld) };
 
-  if (!Object.hasOwn(links, paramRegion)) {
-    DEBUG && console.log("toUrl - !Object.hasOwn(links, paramRegion)");
+  if (!Object.hasOwn(LINKS, paramRegion)) {
+    DEBUG && console.log("toUrl - !Object.hasOwn(LINKS, paramRegion)");
     if (paramRegion !== "eu" && paramRegion !== "na") {
       paramRegion = "eu";
     } else {
@@ -73,12 +83,14 @@ async function toURL() {
         break;
       }
     }
+  } else {
+    badUrl.region = false;
   }
 
   if (!badUrl.region && paramWorld) {
     DEBUG && console.log("toUrl - paramWorld");
     for (const world in elementSelectWorld.options) {
-      if (elementSelectWorld.options[world].dataset?.id === paramWorld) {
+      if ((prevState && paramWorld === 1) || elementSelectWorld.options[world].dataset?.id === paramWorld) {
         elementSelectWorld.options[world].selected = true;
         badUrl.world = false;
         break;
@@ -97,7 +109,7 @@ async function toURL() {
 
 function getReadableWorld(id) {
   // DEBUG && console.log("getReadableWorld");
-  for (const w of allWorlds) {
+  for (const w of ALLWORLDS) {
     if (Number.parseInt(id, 10) === w.id) {
       return w.en;
     }
@@ -109,8 +121,12 @@ async function removeResults() {
 }
 
 document.querySelector("#search-guild").addEventListener("search", async (event) => {
-  DEBUG && console.log("search-guild");
-  const promiseSetUrl = setUrl();
+  DEBUG && console.log(`search-guild - prevState: ${PREV}`);
+
+  let promiseSetUrl;
+  if (!PREV) {
+    promiseSetUrl = setUrl();
+  }
 
   const promiseRemoveResults = removeResults();
   document.querySelector("#counter").textContent = "";
@@ -128,7 +144,7 @@ document.querySelector("#search-guild").addEventListener("search", async (event)
 
   const isGuildTag = /^\[/.test(query);
   const regex = new RegExp(`${isGuildTag ? "" : "\\b"}${query}`.replace("[", "\\[\\b").replace("]", "\\b\\]"));
-  const source = worldId ? links[region][Number.parseInt(worldId, 10)] : Object.values(links[region]).flat();
+  const source = worldId ? LINKS[region][Number.parseInt(worldId, 10)] : Object.values(LINKS[region]).flat();
   const results = source.reduce((accu, value) => {
     const fullName = `${value.n} [${value.t}]`.toLowerCase();
     if (query && !regex.test(fullName)) return accu;
@@ -178,6 +194,7 @@ document.querySelector("#search-guild").addEventListener("search", async (event)
   document.querySelector("#counter").textContent = `(${sortedResults.length} guild${sortedResults.length > 1 ? "s" : ""})`;
   window.scrollTo(0, 0);
   await promiseSetUrl;
+  PREV = false;
 });
 
 document.querySelector("#select-region").addEventListener("change", async (event) => {
@@ -185,7 +202,7 @@ document.querySelector("#select-region").addEventListener("change", async (event
   if (event.isTrusted) {
     DEBUG && console.log("select-region - isTrusted");
     const region = event.target.value.toLowerCase();
-    if (!Object.hasOwn(links, region)) {
+    if (!Object.hasOwn(LINKS, region)) {
       DEBUG && console.log("select-region - loadLinks");
       await loadLinks(region);
     }
@@ -212,7 +229,7 @@ function populateDropDown(region) {
   selectWorld.add(option);
 
   const regexRegion = region === "na" ? new RegExp(/^11/) : new RegExp(/^12/);
-  const sorted = allWorlds.sort((a, b) => a.en.localeCompare(b.en));
+  const sorted = ALLWORLDS.sort((a, b) => a.en.localeCompare(b.en));
   for (const world of sorted) {
     if (!regexRegion.test(world.id)) continue;
     const option = document.createElement("option");
@@ -223,9 +240,9 @@ function populateDropDown(region) {
 }
 
 async function loadLinks(region) {
-  const response = await fetch(jsons[region]);
+  const response = await fetch(JSONS[region]);
   const json = await response.json();
-  links[region] = json;
+  LINKS[region] = json;
 }
 
 async function Job() {
