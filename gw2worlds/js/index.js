@@ -59,11 +59,12 @@ async function toURL(prevState) {
   const params = new URLSearchParams(window.location.search);
   let paramRegion = prevState ? prevState.region : (params.get("region") || "eu").toLowerCase();
   let paramWorld = prevState ? prevState.world : params.get("world");
-  const paramSearch = prevState ? prevState.search : params.get("search");
+  let paramSearch = prevState ? prevState.search : params.get("search");
   const elementSelectRegion = document.querySelector("#select-region");
   const elementSelectWorld = document.querySelector("#select-world");
   const elementSearchGuild = document.querySelector("#search-guild");
   if (prevState && !prevState.world) paramWorld = 1;
+  if (prevState && !prevState.search) paramSearch = "";
   const badUrl = { region: true, world: Boolean(paramWorld) };
 
   if (!Object.hasOwn(LINKS, paramRegion)) {
@@ -98,7 +99,7 @@ async function toURL(prevState) {
     }
   }
 
-  if (!badUrl.region && !badUrl.world && paramSearch) {
+  if ((!badUrl.region && !badUrl.world && paramSearch) || (!badUrl.region && !badUrl.world && prevState)) {
     DEBUG && console.log("toUrl - paramSearch");
     elementSearchGuild.value = paramSearch;
   }
