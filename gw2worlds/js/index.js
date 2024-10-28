@@ -1,4 +1,4 @@
-const DEBUG = false;
+const DEBUG = true;
 const JSONS = { eu: "linksEU.json", na: "linksNA.json" };
 const ALLWORLDS = [
   { id: 11001, en: "Moogooloo" },
@@ -30,20 +30,18 @@ const ALLWORLDS = [
   { id: 12015, en: "Bava Nisos" },
 ];
 const LINKS = {};
-const PREVSTATE = { isPrev: false };
 
 window.addEventListener("popstate", async (event) => {
-  PREVSTATE.isPrev = true;
   await toURL(event.state);
 });
 
-async function setUrl() {
-  DEBUG && console.log("setUrl");
+async function setURL() {
+  DEBUG && console.log("setURL");
   const elementSelectRegion = document.querySelector("#select-region");
-  const region = elementSelectRegion.value.toLowerCase();
   const elementSelectWorld = document.querySelector("#select-world");
-  const worldId = elementSelectWorld.options[elementSelectWorld.selectedIndex]?.dataset.id;
   const elementSearchGuild = document.querySelector("#search-guild");
+  const region = elementSelectRegion.value.toLowerCase();
+  const worldId = elementSelectWorld.options[elementSelectWorld.selectedIndex]?.dataset.id;
   const query = elementSearchGuild.value;
   const paramRegion = `region=${region}`;
   const paramWorld = `&world=${worldId}`;
@@ -55,25 +53,19 @@ async function setUrl() {
 }
 
 async function toURL(prevState) {
-  DEBUG && console.log("toUrl", prevState);
+  DEBUG && console.log(`toURL - prevState: ${prevState}`);
   const params = new URLSearchParams(window.location.search);
   let paramRegion = prevState ? prevState.region : (params.get("region") || "eu").toLowerCase();
-  let paramWorld = prevState ? prevState.world : params.get("world");
+  const paramWorld = prevState ? prevState.world : params.get("world");
   let paramSearch = prevState ? prevState.search : params.get("search");
   const elementSelectRegion = document.querySelector("#select-region");
   const elementSelectWorld = document.querySelector("#select-world");
   const elementSearchGuild = document.querySelector("#search-guild");
-
-  if (prevState && !prevState.world) paramWorld = 1;
   if (prevState && !prevState.search) paramSearch = "";
-  const badUrl = { region: true, world: Boolean(paramWorld) };
 
   if (!Object.hasOwn(LINKS, paramRegion)) {
-    DEBUG && console.log("toUrl - !Object.hasOwn(LINKS, paramRegion)");
     if (paramRegion !== "eu" && paramRegion !== "na") {
       paramRegion = "eu";
-    } else {
-      badUrl.region = false;
     }
 
     await loadLinks(paramRegion);
@@ -85,34 +77,28 @@ async function toURL(prevState) {
         break;
       }
     }
-  } else {
-    badUrl.region = false;
   }
 
-  if (!badUrl.region && paramWorld) {
-    DEBUG && console.log("toUrl - paramWorld");
+  if (!paramWorld || !getReadableWorld(paramWorld)) {
+    elementSelectWorld.options[0].selected = true;
+  } else {
     for (const world in elementSelectWorld.options) {
-      if ((prevState && paramWorld === 1) || elementSelectWorld.options[world].dataset?.id === paramWorld) {
+      if (elementSelectWorld.options[world].dataset?.id === paramWorld) {
         elementSelectWorld.options[world].selected = true;
-        badUrl.world = false;
         break;
       }
     }
   }
 
-  if ((!badUrl.region && !badUrl.world && paramSearch) || (!badUrl.region && !badUrl.world && prevState)) {
-    DEBUG && console.log("toUrl - paramSearch");
+  if (paramSearch) {
     elementSearchGuild.value = paramSearch;
   }
 
-  // create custom event here
-  // dispatch to "elementSearchGuild"
-  // DO NOT "setUrl" in "elementSearchGuild" if "prevState"
-  // ideas:
-  // 2 events dispatch to "elementSearchGuild" (1 prevState / 1 !prevState)
-  // move "elementSearchGuild" into his own function
-  DEBUG && console.log("toUrl - elementSearchGuild.dispatchEvent");
-  elementSearchGuild.dispatchEvent(new Event("search"));
+  if (prevState) {
+    elementSearchGuild.dispatchEvent(new Event("search-prev"));
+  } else {
+    elementSearchGuild.dispatchEvent(new Event("search"));
+  }
 }
 
 function getReadableWorld(id) {
@@ -127,13 +113,20 @@ function getReadableWorld(id) {
 async function removeResults() {
   document.querySelector("#results")?.remove();
 }
+document.querySelector("#search-guild").addEventListener("search-prev", async (event) => {
+  await search(event, true);
+});
 
 document.querySelector("#search-guild").addEventListener("search", async (event) => {
-  DEBUG && console.log(`search-guild - prevState: ${PREVSTATE.isPrev}`);
+  await search(event);
+});
+
+async function search(event, isPrev) {
+  DEBUG && console.log(`search - isPrev: ${isPrev}`);
 
   let promiseSetUrl;
-  if (!PREVSTATE.isPrev) {
-    promiseSetUrl = setUrl();
+  if (!isPrev) {
+    promiseSetUrl = setURL();
   }
 
   const promiseRemoveResults = removeResults();
@@ -144,7 +137,6 @@ document.querySelector("#search-guild").addEventListener("search", async (event)
   const worldId = elementSelectWorld.options[elementSelectWorld.selectedIndex].dataset.id;
   if ((!query && !worldId) || (query && query.length < 2)) {
     await Promise.all([promiseSetUrl, promiseRemoveResults]);
-    PREVSTATE.isPrev = false;
     return;
   }
 
@@ -203,16 +195,13 @@ document.querySelector("#search-guild").addEventListener("search", async (event)
   document.querySelector("#counter").textContent = `(${sortedResults.length} guild${sortedResults.length > 1 ? "s" : ""})`;
   window.scrollTo(0, 0);
   await promiseSetUrl;
-  PREVSTATE.isPrev = false;
-});
+}
 
 document.querySelector("#select-region").addEventListener("change", async (event) => {
   DEBUG && console.log("select-region");
   if (event.isTrusted) {
-    DEBUG && console.log("select-region - isTrusted");
     const region = event.target.value.toLowerCase();
     if (!Object.hasOwn(LINKS, region)) {
-      DEBUG && console.log("select-region - loadLinks");
       await loadLinks(region);
     }
 
@@ -226,12 +215,11 @@ document.querySelector("#select-region").addEventListener("change", async (event
 document.querySelector("#select-world").addEventListener("change", async () => {
   DEBUG && console.log("select-world");
   const elementSearchGuild = document.querySelector("#search-guild");
-  DEBUG && console.log("select-world - elementSearchGuild.dispatchEvent");
   elementSearchGuild.dispatchEvent(new Event("search"));
 });
 
 function populateDropDown(region) {
-  DEBUG && console.log("populateDropDown");
+  DEBUG && console.log(`populateDropdown - region: ${region}`);
   const selectWorld = document.querySelector("#select-world");
   selectWorld.options.length = 0;
   const option = document.createElement("option");
