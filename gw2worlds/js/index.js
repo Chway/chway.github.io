@@ -136,6 +136,7 @@ document.querySelector("#search-guild").addEventListener("search", async (event)
   const worldId = elementSelectWorld.options[elementSelectWorld.selectedIndex].dataset.id;
   if ((!query && !worldId) || (query && query.length < 2)) {
     await Promise.all([promiseSetUrl, promiseRemoveResults]);
+    PREV = false;
     return;
   }
 
