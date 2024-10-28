@@ -1,4 +1,3 @@
-let PREV = false;
 const DEBUG = false;
 const JSONS = { eu: "linksEU.json", na: "linksNA.json" };
 const ALLWORLDS = [
@@ -31,9 +30,10 @@ const ALLWORLDS = [
   { id: 12015, en: "Bava Nisos" },
 ];
 const LINKS = {};
+const PREVSTATE = { isPrev: false };
 
 window.addEventListener("popstate", async (event) => {
-  PREV = true;
+  PREVSTATE.isPrev = true;
   await toURL(event.state);
 });
 
@@ -63,6 +63,7 @@ async function toURL(prevState) {
   const elementSelectRegion = document.querySelector("#select-region");
   const elementSelectWorld = document.querySelector("#select-world");
   const elementSearchGuild = document.querySelector("#search-guild");
+
   if (prevState && !prevState.world) paramWorld = 1;
   if (prevState && !prevState.search) paramSearch = "";
   const badUrl = { region: true, world: Boolean(paramWorld) };
@@ -104,6 +105,12 @@ async function toURL(prevState) {
     elementSearchGuild.value = paramSearch;
   }
 
+  // create custom event here
+  // dispatch to "elementSearchGuild"
+  // DO NOT "setUrl" in "elementSearchGuild" if "prevState"
+  // ideas:
+  // 2 events dispatch to "elementSearchGuild" (1 prevState / 1 !prevState)
+  // move "elementSearchGuild" into his own function
   DEBUG && console.log("toUrl - elementSearchGuild.dispatchEvent");
   elementSearchGuild.dispatchEvent(new Event("search"));
 }
@@ -122,10 +129,10 @@ async function removeResults() {
 }
 
 document.querySelector("#search-guild").addEventListener("search", async (event) => {
-  DEBUG && console.log(`search-guild - prevState: ${PREV}`);
+  DEBUG && console.log(`search-guild - prevState: ${PREVSTATE.isPrev}`);
 
   let promiseSetUrl;
-  if (!PREV) {
+  if (!PREVSTATE.isPrev) {
     promiseSetUrl = setUrl();
   }
 
@@ -137,7 +144,7 @@ document.querySelector("#search-guild").addEventListener("search", async (event)
   const worldId = elementSelectWorld.options[elementSelectWorld.selectedIndex].dataset.id;
   if ((!query && !worldId) || (query && query.length < 2)) {
     await Promise.all([promiseSetUrl, promiseRemoveResults]);
-    PREV = false;
+    PREVSTATE.isPrev = false;
     return;
   }
 
@@ -196,7 +203,7 @@ document.querySelector("#search-guild").addEventListener("search", async (event)
   document.querySelector("#counter").textContent = `(${sortedResults.length} guild${sortedResults.length > 1 ? "s" : ""})`;
   window.scrollTo(0, 0);
   await promiseSetUrl;
-  PREV = false;
+  PREVSTATE.isPrev = false;
 });
 
 document.querySelector("#select-region").addEventListener("change", async (event) => {
