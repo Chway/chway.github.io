@@ -1,4 +1,4 @@
-const DEBUG = true;
+const DEBUG = false;
 const jsons = { eu: "linksEU.json", na: "linksNA.json" };
 const allWorlds = [
   { id: 11001, en: "Moogooloo" },
@@ -31,7 +31,7 @@ const allWorlds = [
 ];
 const links = {};
 
-function setUrl() {
+async function setUrl() {
   DEBUG && console.log("setUrl");
   const elementSelectRegion = document.querySelector("#select-region");
   const region = elementSelectRegion.value.toLowerCase();
@@ -87,7 +87,7 @@ function toURL() {
 }
 
 function getReadableWorld(id) {
-  DEBUG && console.log("getReadableWorld");
+  // DEBUG && console.log("getReadableWorld");
   for (const w of allWorlds) {
     if (Number.parseInt(id, 10) === w.id) {
       return w.en;
@@ -95,78 +95,57 @@ function getReadableWorld(id) {
   }
 }
 
-document.querySelector("#search-guild").addEventListener("search", (event) => {
+async function removeResults() {
+  document.querySelector("#results")?.remove();
+}
+
+document.querySelector("#search-guild").addEventListener("search", async (event) => {
   DEBUG && console.log("search-guild");
-  setUrl();
-  event.target.classList.remove("wrong-query");
+  const promiseSetUrl = setUrl();
+
+  const promiseRemoveResults = removeResults();
+  document.querySelector("#counter").textContent = "";
+
   const query = event.target.value.toLowerCase();
-  const elementSelectRegion = document.querySelector("#select-region");
-  const region = elementSelectRegion.value.toLowerCase();
   const elementSelectWorld = document.querySelector("#select-world");
   const worldId = elementSelectWorld.options[elementSelectWorld.selectedIndex].dataset.id;
-
-  if (query.length === 0 && !worldId) {
-    const elementResults = document.querySelectorAll(".result");
-    for (const element of elementResults) element.remove();
-    document.querySelector("#counter").textContent = "";
+  if ((!query && !worldId) || (query && query.length < 2)) {
+    await Promise.all([promiseSetUrl, promiseRemoveResults]);
     return;
   }
 
-  if (query.length === 0 && worldId) {
-    if (event.isTrusted) {
-      DEBUG && console.log("search-guild", "elementSelectWorld.dispatchEvent");
-      elementSelectWorld.dispatchEvent(new Event("change"));
-      return;
-    }
-  }
+  const elementSelectRegion = document.querySelector("#select-region");
+  const region = elementSelectRegion.value.toLowerCase();
 
-  if (query && query.length >= 2) {
-    const elementResults = document.querySelectorAll(".result");
-    for (const element of elementResults) element.remove();
+  const isGuildTag = /^\[/.test(query);
+  const regex = new RegExp(`${isGuildTag ? "" : "\\b"}${query}`.replace("[", "\\[\\b").replace("]", "\\b\\]"));
+  const source = worldId ? links[region][Number.parseInt(worldId, 10)] : Object.values(links[region]).flat();
+  const results = source.reduce((accu, value) => {
+    const fullName = `${value.n} [${value.t}]`;
+    if (query && !regex.test(fullName.toLowerCase())) return accu;
+    const readableWorld = getReadableWorld(value.w);
+    accu.push({ ...value, ...{ rw: readableWorld } });
+    return accu;
+  }, []);
+  const sortedResults = results.sort((a, b) => a.t.localeCompare(b.t));
 
-    const isGuildTag = /^\[/.test(query);
-    const regex = new RegExp(`${isGuildTag ? "" : "\\b"}${query}`.replace("[", "\\[\\b").replace("]", "\\b\\]"));
-    const results = [];
+  const elementResults = document.createElement("div");
+  elementResults.id = "results";
+  const templateResult = document.querySelector("#template-result");
+  const fragment = new DocumentFragment();
+  for (const guild of sortedResults) {
+    const clone = templateResult.content.cloneNode(true);
+    const spanName = clone.querySelector(".result-name");
+    const spanTagName = clone.querySelector(".result-tag-name");
+    const spanWorld = clone.querySelector(".result-world");
+    spanName.textContent = `${guild.n}`;
+    spanTagName.textContent = `${guild.t}`;
 
-    if (worldId) {
-      for (const guild of links[region][Number.parseInt(worldId, 10)]) {
-        if (regex.test(guild.toLowerCase())) {
-          results.push({ name: guild, world: "" });
-        }
-      }
-    } else {
-      for (const [world, guilds] of Object.entries(links[region])) {
-        const readableWorld = getReadableWorld(world);
-        for (const guild of guilds) {
-          if (regex.test(guild.toLowerCase())) {
-            results.push({ name: guild, world: readableWorld });
-          }
-        }
-      }
-    }
-
-    const arrNameTag = results.reduce((accu, value) => {
-      const matches = value.name.match(/(.+)\s\[(.+)\]/);
-      const nameTag = { name: matches[1], tag: matches[2] };
-      accu.push({ ...nameTag, ...{ world: value.world } });
-      return accu;
-    }, []);
-    const sortedNameTag = arrNameTag.sort((a, b) => a.tag.localeCompare(b.tag));
-
-    for (const guild of sortedNameTag) {
-      const p = document.createElement("div");
-      p.classList.add("result");
-      const spanName = document.createElement("span");
-      spanName.classList.add("result-name");
-      const spanTag = document.createElement("span");
-      spanTag.classList.add("result-tag");
-      const spanWorld = document.createElement("span");
-      spanWorld.classList.add("result-world");
-      spanName.textContent = `${guild.name}`;
-      spanWorld.textContent = `[${guild.world}]`;
+    if (!worldId) {
+      spanWorld.textContent = `[${guild.rw}]`;
       spanWorld.addEventListener("mouseup", () => {
         for (const world in elementSelectWorld.options) {
-          if (elementSelectWorld.options[world].value === guild.world) {
+          if (elementSelectWorld.options[world].value === guild.rw) {
             event.target.value = "";
             elementSelectWorld.options[world].selected = true;
             elementSelectWorld.dispatchEvent(new Event("change"));
@@ -174,77 +153,39 @@ document.querySelector("#search-guild").addEventListener("search", (event) => {
           }
         }
       });
-      spanTag.textContent = `[${guild.tag}]`;
-      p.appendChild(spanName);
-      p.appendChild(spanTag);
-      if (!worldId) p.appendChild(spanWorld);
-      document.querySelector("#results").appendChild(p);
-      document.querySelector("#counter").textContent = `(${sortedNameTag.length} guild${sortedNameTag.length > 1 ? "s" : ""})`;
     }
-    window.scrollTo(0, 0);
-  } else {
-    event.target.classList.add("wrong-query");
+
+    fragment.append(clone);
   }
+
+  await promiseRemoveResults;
+  elementResults.appendChild(fragment);
+  document.querySelector("body").appendChild(elementResults);
+  document.querySelector("#counter").textContent = `(${sortedResults.length} guild${sortedResults.length > 1 ? "s" : ""})`;
+  window.scrollTo(0, 0);
+  await promiseSetUrl;
 });
 
-document.querySelector("#select-region").addEventListener("change", (event) => {
+document.querySelector("#select-region").addEventListener("change", async (event) => {
   DEBUG && console.log("select-region");
   populateDropDown();
 
   if (event.isTrusted) {
-    setUrl();
+    const promiseSetUrl = setUrl();
     const selectWorld = document.querySelector("#select-world");
     DEBUG && console.log("search-region", "elementSelectWorld.dispatchEvent");
     selectWorld.dispatchEvent(new Event("change"));
+    await promiseSetUrl;
   }
 });
 
-document.querySelector("#select-world").addEventListener("change", (event) => {
+document.querySelector("#select-world").addEventListener("change", async () => {
   DEBUG && console.log("select-world");
-  setUrl();
+  const promiseSetUrl = setUrl();
   const elementSearchGuild = document.querySelector("#search-guild");
-  const id = event.target.options[event.target.selectedIndex].dataset.id;
-
-  const elementResults = document.querySelectorAll("#results .result");
-  for (const result of elementResults) result.remove();
-
-  if (!id && !elementSearchGuild.value) {
-    document.querySelector("#counter").textContent = "";
-    return;
-  }
-
-  if (elementSearchGuild.value) {
-    DEBUG && console.log("select-world", "elementSearchGuild.dispatchEvent");
-    elementSearchGuild.dispatchEvent(new Event("search"));
-    return;
-  }
-
-  const selectRegion = document.querySelector("#select-region");
-  const region = selectRegion.value.toLowerCase();
-
-  const arrNameTag = links[region][Number.parseInt(id, 10)].reduce((accu, value) => {
-    const matches = value.match(/(.+)\s\[(.+)\]/);
-    const nameTag = { name: matches[1], tag: matches[2] };
-    accu.push(nameTag);
-    return accu;
-  }, []);
-  const sortedNameTag = arrNameTag.sort((a, b) => a.tag.localeCompare(b.tag));
-
-  for (const guild of sortedNameTag) {
-    const p = document.createElement("div");
-    p.classList.add("result");
-    const spanName = document.createElement("span");
-    spanName.classList.add("result-name");
-    const spanTag = document.createElement("span");
-    spanTag.classList.add("result-tag");
-    spanName.textContent = `${guild.name}`;
-    spanTag.textContent = `[${guild.tag}]`;
-    p.appendChild(spanName);
-    p.appendChild(spanTag);
-    document.querySelector("#results").appendChild(p);
-  }
-  document.querySelector("#counter").textContent = `(${sortedNameTag.length} guild${sortedNameTag.length > 1 ? "s" : ""})`;
-  window.scrollTo(0, 0);
+  DEBUG && console.log("select-world", "elementSearchGuild.dispatchEvent");
+  elementSearchGuild.dispatchEvent(new Event("search"));
+  await promiseSetUrl;
 });
 
 function populateDropDown() {

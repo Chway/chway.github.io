@@ -41,7 +41,6 @@ body {
 
 .result-world {
   color: salmon;
-  margin-left: .25em;
   text-decoration: underline;
   cursor: pointer;
 }
@@ -51,8 +50,11 @@ body {
 }
 
 .result-tag {
+  color: #555;
+}
+
+.result-tag-name {
   color: darkturquoise;
-  margin-left: .25em;
 }
 
 .wrong-query {
