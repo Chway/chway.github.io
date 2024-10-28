@@ -1,15 +1,15 @@
 body {
-  background-color: #111;
-  color: #ddd;
+  background-color: #0f0f0f;
+  color: #f1f1f1;
   font-family: monospace;
   font-size: 1.1em;
 }
 
 #top {
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
   position: sticky;
   top: 0;
-  background-color: #000;
+  background-color: #0f0f0f;
   height: 2em;
   width: 100vw;
   display: table-cell;
@@ -20,12 +20,13 @@ body {
 #results {
   margin: .75em;
 }
+
 #select-region,
 #select-world,
 #search-guild {
-  background-color: #000;
-  color: #ddd;
-  border: 1px solid #333;
+  background-color: #0f0f0f;
+  color: #f1f1f1;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 0;
 }
 
@@ -35,28 +36,22 @@ body {
   outline: none;
 }
 
-.result-name {
-  font-weight: bold;
-}
-
-.result-world {
+.result-world-name {
   color: salmon;
   text-decoration: underline;
   cursor: pointer;
 }
 
-.result-world:hover {
+.result-world-name:hover {
   text-decoration: none;
 }
 
+.result-world,
 .result-tag {
-  color: #555;
+  color: #777;
 }
 
 .result-tag-name {
   color: darkturquoise;
-}
-
-.wrong-query {
-  background-color: lightpink;
+  font-weight: bold;
 }
