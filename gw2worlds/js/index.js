@@ -30,10 +30,31 @@ const ALLWORLDS = [
   { id: 12015, en: "Bava Nisos" },
 ];
 const LINKS = {};
+const LASTUPDATE = {};
+
+document.querySelector("#go-to-top").addEventListener("click", () => {
+  window.scrollTo(0, 0);
+});
+
+window.onscroll = () => {
+  const elementGoToTop = document.querySelector("#go-to-top");
+  elementGoToTop.style.display = window.scrollY ? "block" : "none";
+};
 
 window.addEventListener("popstate", async (event) => {
   await toURL(event.state);
 });
+
+function getLastFetched(region) {
+  return new Date(LASTUPDATE[region]).toLocaleString(undefined, {
+    timeZoneName: "short",
+    day: "numeric",
+    month: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 async function setURL() {
   DEBUG && console.log("1) setURL()");
@@ -69,6 +90,7 @@ async function toURL(prevState) {
     await loadLinks(paramRegion);
   }
   populateDropDown(paramRegion);
+  document.querySelector("#last-fetched").textContent = `Updated on ${getLastFetched(paramRegion)}`;
 
   for (const region in elementSelectRegion.options) {
     if (elementSelectRegion.options[region].value?.toLowerCase() === paramRegion) {
@@ -122,7 +144,6 @@ async function removeResults() {
 async function search(event) {
   DEBUG && console.log(`1) search() (${event})`);
   const promiseRemoveResults = removeResults();
-  document.querySelector("#counter").textContent = "";
 
   const query = event.target.value.toLowerCase();
   const elementSelectWorld = document.querySelector("#select-world");
@@ -137,16 +158,23 @@ async function search(event) {
 
   const isGuildTag = /^\[/.test(query);
   const regex = new RegExp(`${isGuildTag ? "" : "\\b"}${query}`.replace("[", "\\[\\b").replace("]", "\\b\\]"));
-  const source = worldId ? LINKS[region][Number.parseInt(worldId, 10)] : Object.values(LINKS[region]).flat();
-  const results = source.reduce((accu, value) => {
-    const fullName = `${value.n} [${value.t}]`.toLowerCase();
-    if (query && !regex.test(fullName)) return accu;
-    const readableWorld = getReadableWorld(value.w, region);
-    accu.push({ ...value, ...{ rw: readableWorld } });
-    return accu;
-  }, []);
-  const sortedResults = results.sort((a, b) => a.t.localeCompare(b.t));
 
+  let result = [];
+  if (query && !worldId) {
+    result = Object.entries(LINKS[region]).reduce((accu, [world, guilds]) => {
+      for (const guild of guilds) {
+        if (query && !regex.test(`${guild.n} [${guild.t}]`.toLowerCase())) continue;
+        accu.push({ ...guild, ...{ rw: getReadableWorld(world, region) } });
+      }
+      return accu;
+    }, []);
+  } else if (query && worldId) {
+    result = LINKS[region][Number.parseInt(worldId, 10)].filter((guild) => regex.test(`${guild.n} [${guild.t}]`.toLowerCase()));
+  } else if (!query && worldId) {
+    result = LINKS[region][Number.parseInt(worldId, 10)];
+  }
+
+  const sortedResults = result.sort((a, b) => a.t.localeCompare(b.t));
   const elementResults = document.createElement("div");
   elementResults.id = "results";
   const templateResult = document.querySelector("#template-result");
@@ -184,7 +212,6 @@ async function search(event) {
   await promiseRemoveResults;
   elementResults.appendChild(fragment);
   document.querySelector("body").appendChild(elementResults);
-  document.querySelector("#counter").textContent = `(${sortedResults.length} guild${sortedResults.length > 1 ? "s" : ""})`;
   window.scrollTo(0, 0);
 }
 
@@ -196,6 +223,7 @@ document.querySelector("#select-region").addEventListener("change", async (event
       await loadLinks(region);
     }
     populateDropDown(region);
+    document.querySelector("#last-fetched").textContent = `Updated on ${getLastFetched(region)}`;
 
     DEBUG && console.log("2) select-region-listener - select-world-dispatch");
     const selectWorld = document.querySelector("#select-world");
@@ -244,7 +272,8 @@ async function loadLinks(region) {
   DEBUG && console.log(`1) loadLinks() (region: ${region})`);
   const response = await fetch(JSONS[region]);
   const json = await response.json();
-  LINKS[region] = json;
+  LINKS[region] = json.worlds;
+  LASTUPDATE[region] = json.lastModified;
 }
 
 async function Job() {

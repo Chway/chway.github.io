@@ -20,18 +20,22 @@
     </div>
   </template>
   <div id="top">
-    <label for="select-region">Region:</label>
-    <select name="select-region" id="select-region">
-      <option value="EU">EU</option>
-      <option value="NA">NA</option>
-    </select>
-    <label for="select-world">World:</label>
-    <select name="select-world" id="select-world"></select>
-    <label for="search-guild">Search:</label>
-    <input type="search" name="search-guild" id="search-guild">
-    <span id="counter"></span>
+    <div id="region">
+      <label for="select-region">Region:</label><select name="select-region" id="select-region">
+        <option value="EU">EU</option>
+        <option value="NA">NA</option>
+      </select>
+    </div>
+    <div id="world">
+      <label for="select-world">World:</label><select name="select-world" id="select-world"></select>
+    </div>
+    <div id="search">
+      <label for="search-guild">Search:</label><input type="search" name="search-guild" id="search-guild">
+    </div>
+    <span id="last-fetched"></span>
   </div>
   <div id="results"></div>
+  <button id="go-to-top" title="Go to top">Top</button>
 </body>
 
 </html>
