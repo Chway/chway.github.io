@@ -1,4 +1,4 @@
-const DEBUG = true;
+const DEBUG = false;
 const JSONS = { eu: "linksEU.json", na: "linksNA.json" };
 const ALLWORLDS = [
   { id: 11001, en: "Moogooloo" },
