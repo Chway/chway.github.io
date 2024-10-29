@@ -181,16 +181,16 @@ async function search(event) {
   const fragment = new DocumentFragment();
   for (const guild of sortedResults) {
     const clone = templateResult.content.cloneNode(true);
-    const spanName = clone.querySelector(".result-name");
-    const spanTagName = clone.querySelector(".result-tag-name");
+    const divResult = clone.querySelector(".result");
+    const spanTag = clone.querySelector(".result-tag");
     const spanWorld = clone.querySelector(".result-world");
-    const spanWorldName = clone.querySelector(".result-world-name");
-    spanName.textContent = `${guild.n}`;
-    spanTagName.textContent = `${guild.t}`;
+    divResult.textContent = `${guild.n}`;
+    spanTag.textContent = `[${guild.t}]`;
+    divResult.appendChild(spanTag);
 
     if (!worldId) {
-      spanWorldName.textContent = guild.rw;
-      spanWorldName.addEventListener("click", (event) => {
+      spanWorld.textContent = guild.rw;
+      spanWorld.addEventListener("click", (event) => {
         const elementSelectWorld = document.querySelector("#select-world");
         const elementSearchGuild = document.querySelector("#search-guild");
         for (const world in elementSelectWorld.options) {
@@ -202,10 +202,10 @@ async function search(event) {
           }
         }
       });
+      divResult.appendChild(spanWorld);
     } else {
       spanWorld.remove();
     }
-
     fragment.append(clone);
   }
 

@@ -47,22 +47,23 @@ body {
   margin: .75em;
 }
 
-.result-world-name {
+.result {
+  margin-bottom: .1em;
+}
+
+.result-world {
+  margin-left: .25em;
   color: salmon;
   text-decoration: underline;
   cursor: pointer;
 }
 
-.result-world-name:hover {
+.result-world:hover {
   text-decoration: none;
 }
 
-.result-world,
 .result-tag {
-  color: #777;
-}
-
-.result-tag-name {
+  margin-left: .25em;
   color: darkturquoise;
   font-weight: bold;
 }
