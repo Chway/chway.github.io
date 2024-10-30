@@ -19,6 +19,7 @@ body {
 
 #select-region,
 #select-world,
+#select-sort,
 #search-guild {
   background-color: #0f0f0f;
   color: #f1f1f1;
@@ -36,7 +37,8 @@ body {
 
 #select-region:focus,
 #select-world:focus,
-#search-guild:focus {
+#search-guild:focus,
+#select-sort:focus {
   outline: none;
 }
 
@@ -45,7 +47,8 @@ body {
 }
 
 #world,
-#search {
+#search,
+#sort {
   margin-left: 1em;
 }
 

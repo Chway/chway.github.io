@@ -74,6 +74,7 @@ document.querySelector("#select-region").addEventListener("change", async (event
 
 document.querySelector("#select-region").addEventListener("wheel", (event) => {
   DEBUG && console.log("1) select-region-listener-wheel");
+  event.preventDefault();
   handlerSelectScroll(event);
 });
 
@@ -85,8 +86,22 @@ document.querySelector("#select-world").addEventListener("change", () => {
 });
 
 document.querySelector("#select-world").addEventListener("wheel", (event) => {
-  event.preventDefault();
   DEBUG && console.log("1) select-world-listener-wheel");
+  event.preventDefault();
+  handlerSelectScroll(event);
+});
+
+document.querySelector("#select-sort").addEventListener("change", (event) => {
+  DEBUG && console.log("1) select-sort-listener-change");
+  localStorage.setItem("gw2worlds_sortby", event.target.options[event.target.selectedIndex].value.toLowerCase());
+  DEBUG && console.log("2) select-sort-listener - search-guild-dispatch-prev");
+  const elementSearchGuild = document.querySelector("#search-guild");
+  elementSearchGuild.dispatchEvent(new Event("search-prev"));
+});
+
+document.querySelector("#select-sort").addEventListener("wheel", (event) => {
+  DEBUG && console.log("1) select-sort-listener-wheel");
+  event.preventDefault();
   handlerSelectScroll(event);
 });
 
@@ -141,6 +156,17 @@ async function toURL(prevState) {
   if (prevState && !prevState.search) paramSearch = "";
   const notValid = (paramRegion !== "eu" && paramRegion !== "na") || (paramWorld && !getReadableWorld(paramWorld, paramRegion));
   if (paramRegion !== "eu" && paramRegion !== "na") paramRegion = "eu";
+
+  const localSortBy = localStorage.getItem("gw2worlds_sortby");
+  const elementSelectSort = document.querySelector("#select-sort");
+  const sortBy = localSortBy ? localSortBy : "name";
+  if (!localSortBy) localStorage.setItem("gw2worlds_sortby", "name");
+  for (const option in elementSelectSort.options) {
+    if (elementSelectSort.options[option].value?.toLowerCase() === sortBy) {
+      elementSelectSort.options[option].selected = true;
+      break;
+    }
+  }
 
   if (!Object.hasOwn(LINKS, paramRegion)) {
     await loadLinks(paramRegion);
@@ -282,6 +308,7 @@ async function search(event) {
   const query = event.target.value.toLowerCase().replace(/[/\-\\^$*+?.()|[\]{}]/g, "\\$&");
   const elementSelectRegion = document.querySelector("#select-region");
   const region = elementSelectRegion.value.toLowerCase();
+  const sortBy = localStorage.getItem("gw2worlds_sortby");
   const regex = new RegExp(`(?:(?:^|\\s)${query}s?(?:$|\\s)|(?:^|\\s|\\[)${query}(?:$|\\s|\\]))`, "i");
 
   let result = [];
@@ -299,7 +326,7 @@ async function search(event) {
     result = LINKS[region][Number.parseInt(worldId, 10)];
   }
 
-  const sortedResults = result.sort((a, b) => a.n.trim().localeCompare(b.n.trim())); // result.sort((a, b) => a.t.localeCompare(b.t));
+  const sortedResults = sortBy === "name" ? result.sort((a, b) => a.n.trim().localeCompare(b.n.trim())) : result.sort((a, b) => a.t.localeCompare(b.t));
   CURRENT.sortedResults = sortedResults;
   CURRENT.worldId = worldId;
 
