@@ -3,7 +3,7 @@
 CURRENT unnecessary ?
 LESS listeners and dispatch, MORE functions ?
 change title, GW2Worlds should be at the end ?
-make index.html less boring
+tell the user when no guild found.
 -------------TODO-------------
 */
 
@@ -85,6 +85,7 @@ document.querySelector("#select-world").addEventListener("change", () => {
 });
 
 document.querySelector("#select-world").addEventListener("wheel", (event) => {
+  event.preventDefault();
   DEBUG && console.log("1) select-world-listener-wheel");
   handlerSelectScroll(event);
 });
@@ -216,7 +217,7 @@ function writeToDom(isNext, loadAll, sortedResults, worldId) {
 
   const templateResult = document.querySelector("#template-result");
   const fragment = new DocumentFragment();
-  for (const guild of sortedResults.slice(isNext ? 30 : 0, loadAll ? sortedResults.length : 30)) {
+  for (const guild of sortedResults.slice(isNext ? 250 : 0, loadAll ? sortedResults.length : 250)) {
     const clone = templateResult.content.cloneNode(true);
     const divResult = clone.querySelector(".result");
     const spanTag = clone.querySelector(".result-tag");

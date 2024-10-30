@@ -51,8 +51,26 @@ body {
 
 #last-fetched {
   margin-left: auto;
-  color: #717171;
+  color: #ccc;
   font-size: .9em;
+}
+
+#landing {
+  margin: .75em;
+}
+
+#landing > #title {
+  margin: 0;
+}
+
+#landing #description {
+  font-weight: normal;
+  margin-top: 0;
+  color: #ccc;
+}
+
+#title-highlight {
+  color: lightcoral;
 }
 
 #results {
