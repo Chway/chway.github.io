@@ -3,10 +3,11 @@
 CURRENT unnecessary ?
 LESS listeners and dispatch, MORE functions ?
 change title, GW2Worlds should be at the end ?
+make index.html less boring
 -------------TODO-------------
 */
 
-const DEBUG = true;
+const DEBUG = false;
 const JSONS = { eu: "linksEU.json", na: "linksNA.json" };
 const CURRENT = {};
 const ALLWORLDS = [
