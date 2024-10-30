@@ -70,7 +70,7 @@ body {
 }
 
 #title-highlight {
-  color: lightcoral;
+  color: #f56991;
 }
 
 #results {
@@ -83,7 +83,7 @@ body {
 
 .result-world {
   margin-left: .25em;
-  color: salmon;
+  color: sandybrown;
   text-decoration: underline;
   cursor: pointer;
 }

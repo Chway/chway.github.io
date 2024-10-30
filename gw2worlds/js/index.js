@@ -299,7 +299,7 @@ async function search(event) {
     result = LINKS[region][Number.parseInt(worldId, 10)];
   }
 
-  const sortedResults = result.sort((a, b) => a.t.localeCompare(b.t));
+  const sortedResults = result.sort((a, b) => a.n.trim().localeCompare(b.n.trim())); // result.sort((a, b) => a.t.localeCompare(b.t));
   CURRENT.sortedResults = sortedResults;
   CURRENT.worldId = worldId;
 
