@@ -1,5 +1,6 @@
-const DEBUG = false;
+const DEBUG = true;
 const JSONS = { eu: "linksEU.json", na: "linksNA.json" };
+const CURRENT = {};
 const ALLWORLDS = [
   { id: 11001, en: "Moogooloo" },
   { id: 11002, en: "Rall's Rest" },
@@ -32,17 +33,62 @@ const ALLWORLDS = [
 const LINKS = {};
 const LASTUPDATE = {};
 
-document.querySelector("#go-to-top").addEventListener("click", () => {
-  window.scrollTo(0, 0);
-});
-
 window.onscroll = () => {
   const elementGoToTop = document.querySelector("#go-to-top");
   elementGoToTop.style.display = window.scrollY ? "block" : "none";
 };
 
 window.addEventListener("popstate", async (event) => {
+  DEBUG && console.log(`1) window-listener-popstate (event: ${event})`);
   await toURL(event.state);
+});
+
+document.querySelector("#go-to-top").addEventListener("click", () => {
+  DEBUG && console.log("1) go-to-top-listener-click");
+  window.scrollTo(0, 0);
+});
+
+document.querySelector("#select-region").addEventListener("change", async (event) => {
+  DEBUG && console.log(`1) select-region-listener-change (event: ${event})`);
+
+  const region = event.target.value.toLowerCase();
+  if (!Object.hasOwn(LINKS, region)) {
+    await loadLinks(region);
+  }
+  populateDropDown(region);
+  document.querySelector("#last-fetched").textContent = `Updated on ${getLastFetched(region)}`;
+
+  DEBUG && console.log("2) select-region-listener-change - search-guild-dispatch");
+  const elementSearchGuild = document.querySelector("#search-guild");
+  elementSearchGuild.dispatchEvent(new Event("search"));
+});
+
+document.querySelector("#select-region").addEventListener("wheel", (event) => {
+  DEBUG && console.log("1) select-region-listener-wheel");
+  handlerSelectScroll(event);
+});
+
+document.querySelector("#select-world").addEventListener("change", () => {
+  DEBUG && console.log("1) select-world-listener-change");
+  DEBUG && console.log("2) select-world-listener - search-guild-dispatch");
+  const elementSearchGuild = document.querySelector("#search-guild");
+  elementSearchGuild.dispatchEvent(new Event("search"));
+});
+
+document.querySelector("#select-world").addEventListener("wheel", (event) => {
+  DEBUG && console.log("1) select-world-listener-wheel");
+  handlerSelectScroll(event);
+});
+
+document.querySelector("#search-guild").addEventListener("search", async (event) => {
+  DEBUG && console.log(`1) search-guild-listener-search (event: ${event})`);
+  await setURL();
+  await search(event);
+});
+
+document.querySelector("#search-guild").addEventListener("search-prev", async (event) => {
+  DEBUG && console.log(`1) search-guild-listener-search-prev (event: ${event})`);
+  await search(event);
 });
 
 function getLastFetched(region) {
@@ -141,45 +187,15 @@ async function removeResults() {
   document.querySelector("#results")?.remove();
 }
 
-async function search(event) {
-  DEBUG && console.log(`1) search() (${event})`);
-  const promiseRemoveResults = removeResults();
-
-  const query = event.target.value.toLowerCase();
-  const elementSelectWorld = document.querySelector("#select-world");
-  const worldId = elementSelectWorld.options[elementSelectWorld.selectedIndex].dataset.id;
-  if ((!query && !worldId) || (query && query.length < 2)) {
-    await promiseRemoveResults;
-    return;
-  }
-
-  const elementSelectRegion = document.querySelector("#select-region");
-  const region = elementSelectRegion.value.toLowerCase();
-
-  const isGuildTag = /^\[/.test(query);
-  const regex = new RegExp(`${isGuildTag ? "" : "\\b"}${query}`.replace("[", "\\[\\b").replace("]", "\\b\\]"));
-
-  let result = [];
-  if (query && !worldId) {
-    result = Object.entries(LINKS[region]).reduce((accu, [world, guilds]) => {
-      for (const guild of guilds) {
-        if (query && !regex.test(`${guild.n} [${guild.t}]`.toLowerCase())) continue;
-        accu.push({ ...guild, ...{ rw: getReadableWorld(world, region) } });
-      }
-      return accu;
-    }, []);
-  } else if (query && worldId) {
-    result = LINKS[region][Number.parseInt(worldId, 10)].filter((guild) => regex.test(`${guild.n} [${guild.t}]`.toLowerCase()));
-  } else if (!query && worldId) {
-    result = LINKS[region][Number.parseInt(worldId, 10)];
-  }
-
-  const sortedResults = result.sort((a, b) => a.t.localeCompare(b.t));
-  const elementResults = document.createElement("div");
+function writeToDom(isNext, loadAll, sortedResults, worldId) {
+  DEBUG && console.log(`1) writeToDom() (${isNext}, ${loadAll}, ${typeof sortedResults}, ${worldId})`);
+  document.querySelector("#load-all")?.remove();
+  const elementResults = isNext ? document.querySelector("#results") : document.createElement("div");
   elementResults.id = "results";
+
   const templateResult = document.querySelector("#template-result");
   const fragment = new DocumentFragment();
-  for (const guild of sortedResults) {
+  for (const guild of sortedResults.slice(isNext ? 30 : 0, loadAll ? sortedResults.length : 30)) {
     const clone = templateResult.content.cloneNode(true);
     const divResult = clone.querySelector(".result");
     const spanTag = clone.querySelector(".result-tag");
@@ -209,46 +225,81 @@ async function search(event) {
     fragment.append(clone);
   }
 
-  await promiseRemoveResults;
   elementResults.appendChild(fragment);
+
+  if (!loadAll && sortedResults.length > 30) {
+    const templateResultLoadAll = document.querySelector("#template-result-load-all");
+    const clone = templateResultLoadAll.content.cloneNode(true);
+    const spanLoadAllLink = clone.querySelector("#load-all-link");
+    const spanResultCount = clone.querySelector("#result-count");
+
+    spanLoadAllLink.addEventListener("click", () => {
+      writeToDom(true, true, CURRENT.sortedResults, CURRENT.worldId);
+    });
+
+    spanResultCount.textContent = sortedResults.length;
+    elementResults.appendChild(clone);
+  }
+
   document.querySelector("body").appendChild(elementResults);
-  window.scrollTo(0, 0);
+  if (!isNext) window.scrollTo(0, 0);
 }
 
-document.querySelector("#select-region").addEventListener("change", async (event) => {
-  DEBUG && console.log(`1) select-region-listener (event: ${event})`);
-  if (event.isTrusted) {
-    const region = event.target.value.toLowerCase();
-    if (!Object.hasOwn(LINKS, region)) {
-      await loadLinks(region);
-    }
-    populateDropDown(region);
-    document.querySelector("#last-fetched").textContent = `Updated on ${getLastFetched(region)}`;
+async function search(event) {
+  DEBUG && console.log(`1) search() (${event})`);
+  const promiseRemoveResults = removeResults();
 
-    DEBUG && console.log("2) select-region-listener - select-world-dispatch");
-    const selectWorld = document.querySelector("#select-world");
-    selectWorld.dispatchEvent(new Event("change"));
+  const elementSelectWorld = document.querySelector("#select-world");
+  const worldId = elementSelectWorld.options[elementSelectWorld.selectedIndex]?.dataset.id;
+
+  if ((!event.target.value && !worldId) || (event.target.value && event.target.value.length < 2)) {
+    await promiseRemoveResults;
+    return;
   }
-});
 
-document.querySelector("#select-world").addEventListener("change", async () => {
-  DEBUG && console.log("1) select-world-listener");
+  const query = event.target.value.toLowerCase().replace(/[/\-\\^$*+?.()|[\]{}]/g, "\\$&");
+  const elementSelectRegion = document.querySelector("#select-region");
+  const region = elementSelectRegion.value.toLowerCase();
+  const regex = new RegExp(`(?:(?:^|\\s)${query}s?(?:$|\\s)|(?:^|\\s|\\[)${query}(?:$|\\s|\\]))`, "i");
 
-  DEBUG && console.log("2) select-world-listener - search-guild-dispatch");
-  const elementSearchGuild = document.querySelector("#search-guild");
-  elementSearchGuild.dispatchEvent(new Event("search"));
-});
+  let result = [];
+  if (query && !worldId) {
+    result = Object.entries(LINKS[region]).reduce((accu, [world, guilds]) => {
+      for (const guild of guilds) {
+        if (query && !regex.test(`${guild.n} [${guild.t}]`)) continue;
+        accu.push({ ...guild, ...{ rw: getReadableWorld(world, region) } });
+      }
+      return accu;
+    }, []);
+  } else if (query && worldId) {
+    result = LINKS[region][Number.parseInt(worldId, 10)].filter((guild) => regex.test(`${guild.n} [${guild.t}]`));
+  } else if (!query && worldId) {
+    result = LINKS[region][Number.parseInt(worldId, 10)];
+  }
 
-document.querySelector("#search-guild").addEventListener("search-prev", async (event) => {
-  DEBUG && console.log(`1) search-guild-prev-listener (event: ${event})`);
-  await search(event);
-});
+  const sortedResults = result.sort((a, b) => a.t.localeCompare(b.t));
+  CURRENT.sortedResults = sortedResults;
+  CURRENT.worldId = worldId;
 
-document.querySelector("#search-guild").addEventListener("search", async (event) => {
-  DEBUG && console.log(`1) search-guild-listener (event: ${event})`);
-  await setURL();
-  await search(event);
-});
+  writeToDom(false, Boolean(query), sortedResults, worldId);
+  await promiseRemoveResults;
+}
+
+function handlerSelectScroll(event) {
+  DEBUG && console.log("1) handlerSelectScroll()");
+  // -100: scroll up , 100 : scroll down
+  let nextSelected;
+  if (event.deltaY > 0) {
+    nextSelected = Math.min(event.target.selectedIndex + 1, event.target.options.length - 1);
+  } else {
+    nextSelected = Math.max(event.target.selectedIndex - 1, 0);
+  }
+
+  if (event.target.selectedIndex !== nextSelected) {
+    event.target.selectedIndex = nextSelected;
+    event.target.dispatchEvent(new Event("change"));
+  }
+}
 
 function populateDropDown(region) {
   DEBUG && console.log(`1) populateDropdown() (region: ${region})`);
@@ -256,6 +307,7 @@ function populateDropDown(region) {
   selectWorld.options.length = 0;
   const option = document.createElement("option");
   selectWorld.add(option);
+  selectWorld.selected = true;
 
   const regexRegion = region === "na" ? new RegExp(/^11/) : new RegExp(/^12/);
   const sorted = ALLWORLDS.sort((a, b) => a.en.localeCompare(b.en));

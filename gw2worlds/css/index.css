@@ -26,6 +26,24 @@ body {
   border-radius: 0;
 }
 
+#select-world {
+  min-width: 200px;
+}
+
+#search-guild {
+  padding-left: .3em;
+}
+
+#select-region:focus,
+#select-world:focus,
+#search-guild:focus {
+  outline: none;
+}
+
+#search-guild:focus {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
 #world,
 #search {
   margin-left: 1em;
@@ -35,12 +53,6 @@ body {
   margin-left: auto;
   color: #717171;
   font-size: .9em;
-}
-
-#select-region:focus,
-#select-world:focus,
-#search-guild:focus {
-  outline: none;
 }
 
 #results {
@@ -68,6 +80,20 @@ body {
   font-weight: bold;
 }
 
+#load-all {
+  margin-top: .5em;
+  font-size: .9em;
+}
+
+#load-all-link {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+#load-all-link:hover {
+  text-decoration: none;
+}
+
 #go-to-top {
   display: none; /* Hidden by default */
   position: fixed; /* Fixed/sticky position */
@@ -82,8 +108,4 @@ body {
   padding: 15px; /* Some padding */
   border-radius: 10px; /* Rounded corners */
   font-size: 18px; /* Increase font size */
-}
-
-#myBtn:hover {
-  background-color: #555; /* Add a dark-grey background on hover */
 }

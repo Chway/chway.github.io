@@ -15,6 +15,9 @@
   <template id="template-result">
     <div class="result"><span class="result-tag"></span><span class="result-world"></span></div>
   </template>
+  <template id="template-result-load-all">
+    <div id="load-all"><span id="load-all-link">Load All (<span id="result-count"></span>)</span></div>
+  </template>
   <div id="top">
     <div id="region">
       <label for="select-region">Region:</label><select name="select-region" id="select-region">
@@ -26,7 +29,7 @@
       <label for="select-world">World:</label><select name="select-world" id="select-world"></select>
     </div>
     <div id="search">
-      <label for="search-guild">Search:</label><input type="search" name="search-guild" id="search-guild">
+      <label for="search-guild">Search:</label><input type="search" name="search-guild" id="search-guild" />
     </div>
     <span id="last-fetched"></span>
   </div>
