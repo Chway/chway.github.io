@@ -1,4 +1,12 @@
-const DEBUG = false;
+/*
+-------------TODO-------------
+CURRENT unnecessary ?
+LESS listeners and dispatch, MORE functions ?
+change title, GW2Worlds should be at the end ?
+-------------TODO-------------
+*/
+
+const DEBUG = true;
 const JSONS = { eu: "linksEU.json", na: "linksNA.json" };
 const CURRENT = {};
 const ALLWORLDS = [
@@ -160,7 +168,19 @@ async function toURL(prevState) {
     elementSearchGuild.value = paramSearch;
   }
 
+  if (!paramSearch) {
+    elementSearchGuild.value = "";
+  }
+
+  if (!params.size) {
+    await removeResults();
+    elementSearchGuild.value = "";
+    return;
+  }
+
   if (prevState) {
+    elementSearchGuild.blur();
+
     DEBUG && console.log("2) toURL() - search-guild-prev-dispatch");
     elementSearchGuild.dispatchEvent(new Event("search-prev"));
   } else {
