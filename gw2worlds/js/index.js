@@ -214,6 +214,8 @@ async function toURL(prevState) {
     DEBUG && console.log("3) toURL() - search-guild-dispatch");
     elementSearchGuild.dispatchEvent(new Event("search"));
   }
+
+  return params.size;
 }
 
 function getReadableWorld(id, region) {
@@ -464,7 +466,8 @@ async function loadLinks(region) {
 
 async function Job() {
   DEBUG && console.log("1) Job()");
-  toURL();
+  const hasParams = await toURL();
+  if (!hasParams) writeStatsToDom();
 }
 
 await Job();
