@@ -167,6 +167,17 @@ body {
   text-decoration: none;
 }
 
+#stats-highest-worlds span,
+#stats-least-worlds span {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+#stats-highest-worlds span:hover,
+#stats-least-worlds span:hover {
+  text-decoration: none;
+}
+
 #go-to-top {
   display: none; /* Hidden by default */
   position: fixed; /* Fixed/sticky position */
