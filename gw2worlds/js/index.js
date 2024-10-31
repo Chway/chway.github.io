@@ -2,7 +2,11 @@
 -------------TODO-------------
 CURRENT unnecessary ?
 LESS listeners and dispatch, MORE functions ?
-change title, GW2Worlds should be at the end ?
+stats: add links to server names
+work on accessibility and compatiblity
+tweak html/css
+clean/refacto main code
+more comments
 -------------TODO-------------
 */
 
@@ -137,10 +141,11 @@ async function setURL() {
   const paramRegion = `region=${region}`;
   const paramWorld = `&world=${worldId}`;
   const paramSearch = `&search=${query}`;
-
+  const fullRegion = region === "eu" ? "Europe" : "North America";
   const state = { region: region, world: worldId, search: query };
   history.pushState(state, "", `?${paramRegion}${worldId ? paramWorld : ""}${query ? paramSearch : ""}`);
-  document.title = `GW2Worlds - ${worldId ? getReadableWorld(worldId, region) : elementSelectRegion.value}${query ? ` - ${query}` : ""}`;
+  // document.title = `GW2Worlds - ${worldId ? getReadableWorld(worldId, region) : elementSelectRegion.value}${query ? ` - ${query}` : ""}`;
+  document.title = `${query ? `${query} - ` : ""}${worldId ? `${getReadableWorld(worldId, region)} - ` : `${fullRegion} - `}GW2Worlds`;
 }
 
 async function toURL(prevState) {
