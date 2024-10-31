@@ -5,6 +5,7 @@ work on accessibility and compatiblity
 tweak html/css
 clean/refacto main code
 more comments
+do not show "Why is my guild.." with results? or make it much less visible, or the results much more visible?
 TODO-------------
 */
 
@@ -287,7 +288,7 @@ function writeToDom(isNext, loadAll, sortedResults, worldId, query) {
     const divResult = clone.querySelector(".result");
     const spanTag = clone.querySelector(".result-tag");
     const spanWorld = clone.querySelector(".result-world");
-    divResult.textContent = `${guild.n}`;
+    divResult.textContent = `${guild.n}\x20`;
     spanTag.textContent = `[${guild.t}]`;
     divResult.appendChild(spanTag);
 
