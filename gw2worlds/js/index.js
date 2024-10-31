@@ -3,7 +3,6 @@
 CURRENT unnecessary ?
 LESS listeners and dispatch, MORE functions ?
 change title, GW2Worlds should be at the end ?
-tell the user when no guild found.
 -------------TODO-------------
 */
 
@@ -233,16 +232,48 @@ function getReadableWorld(id, region) {
 
 async function removeResults() {
   document.querySelector("#results")?.remove();
+  document.querySelector("#stats")?.remove();
 }
 
-function writeToDom(isNext, loadAll, sortedResults, worldId) {
+function writeToDom(isNext, loadAll, sortedResults, worldId, query) {
   DEBUG && console.log(`1) writeToDom() (${isNext}, ${loadAll}, ${typeof sortedResults}, ${worldId})`);
   document.querySelector("#load-all")?.remove();
-  const elementResults = isNext ? document.querySelector("#results") : document.createElement("div");
-  elementResults.id = "results";
 
-  const templateResult = document.querySelector("#template-result");
+  let elementResults;
+  let cloneResultLegendNothing;
+  if (isNext) {
+    elementResults = document.querySelector("#results");
+  } else {
+    const templateResults = document.querySelector("#template-results");
+    const cloneResults = templateResults.content.cloneNode(true);
+    elementResults = cloneResults.querySelector("#results");
+
+    const templateResultLegend = document.querySelector("#template-results-legend");
+    const cloneResultsLegend = templateResultLegend.content.cloneNode(true);
+    const divResultLegend = cloneResultsLegend.querySelector("#result-legend");
+    const spanResultCount = cloneResultsLegend.querySelector("#result-legend-count");
+    const spanResultQuery = cloneResultsLegend.querySelector("#result-legend-query");
+    spanResultCount.textContent = `${sortedResults.length ? `${sortedResults.length} guild${sortedResults.length > 1 ? "s" : ""}` : "Nothing"}`;
+    spanResultQuery.textContent = query ? query : getReadableWorld(worldId);
+
+    if (query && query.length < 2) {
+      const templateResultLegendFail = document.querySelector("#template-results-legend-fail");
+      const cloneResultLegendFail = templateResultLegendFail.content.cloneNode(true);
+      const spanResultLegendFail = cloneResultLegendFail.querySelector("#result-legend-fail");
+      spanResultLegendFail.textContent = "Your query must contain atleast 2 characters.";
+      divResultLegend.appendChild(spanResultLegendFail);
+    }
+
+    elementResults.appendChild(cloneResultsLegend);
+  }
+
+  if (isNext || (query && query.length >= 2)) {
+    const templateResultLegendNothing = document.querySelector("#template-results-legend-nothing");
+    cloneResultLegendNothing = templateResultLegendNothing.content.cloneNode(true);
+  }
+
   const fragment = new DocumentFragment();
+  const templateResult = document.querySelector("#template-result");
   for (const guild of sortedResults.slice(isNext ? 250 : 0, loadAll ? sortedResults.length : 250)) {
     const clone = templateResult.content.cloneNode(true);
     const divResult = clone.querySelector(".result");
@@ -274,6 +305,7 @@ function writeToDom(isNext, loadAll, sortedResults, worldId) {
   }
 
   elementResults.appendChild(fragment);
+  if (cloneResultLegendNothing) elementResults.appendChild(cloneResultLegendNothing);
 
   if (!loadAll && sortedResults.length > 30) {
     const templateResultLoadAll = document.querySelector("#template-result-load-all");
@@ -293,6 +325,52 @@ function writeToDom(isNext, loadAll, sortedResults, worldId) {
   if (!isNext) window.scrollTo(0, 0);
 }
 
+function writeStatsToDom() {
+  const elementSelectRegion = document.querySelector("#select-region");
+  const region = elementSelectRegion.options[elementSelectRegion.selectedIndex].value.toLowerCase();
+
+  const templateStats = document.querySelector("#template-stats");
+  const cloneStats = templateStats.content.cloneNode(true);
+  const divStats = cloneStats.querySelector("#stats");
+  const spanStatsRegionCount = divStats.querySelector("#stats-region-count");
+  const spanStatsRegion = divStats.querySelector("#stats-region");
+  const spanStatsLeastWorld = divStats.querySelector("#stats-least-world");
+  const spanStatsLeastWorldCondi = divStats.querySelector("#stats-least-world-condi");
+  const spanStatsLeastWorldCount = divStats.querySelector("#stats-least-world-count");
+  const spanStatsHighestWorld = divStats.querySelector("#stats-highest-world");
+  const spanStatsHighestWorldCondi = divStats.querySelector("#stats-highest-world-condi");
+  const spanStatsHighestCount = divStats.querySelector("#stats-highest-world-count");
+
+  const stats = { regionCount: 0, region: region, leastWorldCount: 0, leastWorld: [], highestWorldCount: 0, highestWorld: [] };
+  for (const [worldId, guilds] of Object.entries(LINKS[region])) {
+    stats.regionCount = stats.regionCount + guilds.length;
+    if (stats.leastWorldCount === 0 || guilds.length === stats.leastWorldCount) {
+      stats.leastWorldCount = guilds.length;
+      stats.leastWorld.push(getReadableWorld(worldId, region));
+    } else if (stats.highestWorldCount === 0 || guilds.length === stats.highestWorldCount) {
+      stats.highestWorldCount = guilds.length;
+      stats.highestWorld.push(getReadableWorld(worldId, region));
+    } else if (stats.leastWorldCount === 0 || guilds.length < stats.leastWorldCount) {
+      stats.leastWorldCount = guilds.length;
+      stats.leastWorld = [getReadableWorld(worldId, region)];
+    } else if (stats.highestWorldCount === 0 || guilds.length > stats.highestWorldCount) {
+      stats.highestWorldCount = guilds.length;
+      stats.highestWorld = [getReadableWorld(worldId, region)];
+    }
+  }
+
+  spanStatsRegionCount.textContent = stats.regionCount.toLocaleString();
+  spanStatsRegion.textContent = stats.region === "eu" ? "European" : "North American";
+  spanStatsLeastWorld.textContent = new Intl.ListFormat().format(stats.leastWorld);
+  spanStatsLeastWorldCondi.textContent = stats.leastWorld.length > 1 ? "worlds are" : "world is";
+  spanStatsLeastWorldCount.textContent = stats.leastWorldCount.toLocaleString();
+  spanStatsHighestWorld.textContent = new Intl.ListFormat().format(stats.highestWorld);
+  spanStatsHighestWorldCondi.textContent = stats.leastWorld.length > 1 ? "worlds are" : "world is";
+  spanStatsHighestCount.textContent = stats.highestWorldCount.toLocaleString();
+  document.querySelector("body").appendChild(divStats);
+  window.scrollTo(0, 0);
+}
+
 async function search(event) {
   DEBUG && console.log(`1) search() (${event})`);
   const promiseRemoveResults = removeResults();
@@ -300,8 +378,15 @@ async function search(event) {
   const elementSelectWorld = document.querySelector("#select-world");
   const worldId = elementSelectWorld.options[elementSelectWorld.selectedIndex]?.dataset.id;
 
-  if ((!event.target.value && !worldId) || (event.target.value && event.target.value.length < 2)) {
+  if (!event.target.value && !worldId) {
     await promiseRemoveResults;
+    writeStatsToDom();
+    return;
+  }
+
+  if (event.target.value && event.target.value.length < 2) {
+    await promiseRemoveResults;
+    writeToDom(false, Boolean(event.target.value), [], worldId, event.target.value);
     return;
   }
 
@@ -330,7 +415,7 @@ async function search(event) {
   CURRENT.sortedResults = sortedResults;
   CURRENT.worldId = worldId;
 
-  writeToDom(false, Boolean(query), sortedResults, worldId);
+  writeToDom(false, Boolean(query), sortedResults, worldId, event.target.value);
   await promiseRemoveResults;
 }
 

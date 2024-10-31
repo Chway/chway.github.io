@@ -2,7 +2,7 @@ body {
   background-color: #0f0f0f;
   color: #f1f1f1;
   font-family: monospace;
-  font-size: 1.1em;
+  font-size: 14px;
 }
 
 #top {
@@ -70,10 +70,27 @@ body {
   font-weight: normal;
   margin-top: 0;
   color: #ccc;
+  font-size: 1em;
 }
 
 #title-highlight {
   color: #f56991;
+}
+
+#stats {
+  margin: 2em .75em;
+}
+
+#stats p {
+  margin: .5em 0;
+}
+
+#stats sup {
+  color: #aaa;
+}
+
+#stats #footnotes {
+  color: #aaa;
 }
 
 #results {
@@ -82,6 +99,41 @@ body {
 
 .result {
   margin-bottom: .1em;
+}
+
+#result-legend {
+  margin-bottom: 1em;
+}
+
+#result-legend-fail {
+  color: salmon;
+  font-weight: bold;
+}
+
+#results-legend-nothing {
+  margin-top: 3em;
+  color: #ccc;
+}
+
+#results-legend-nothing p {
+  margin: .5em 0;
+}
+
+#results-legend-nothing > q {
+  font-weight: bold;
+  font-style: italic;
+}
+
+#results-legend-nothing a {
+  color: #ccc;
+}
+
+#results-legend-nothing a:hover {
+  text-decoration: none;
+}
+
+#result-query {
+  font-weight: bold;
 }
 
 .result-world {

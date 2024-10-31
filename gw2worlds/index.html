@@ -14,12 +14,61 @@
 </head>
 
 <body>
+  <template id="template-results">
+    <div id="results">
+    </div>
+  </template>
+
+  <template id="template-stats">
+    <div id="stats">
+      <p>There is a total of <b><span id="stats-region-count"></span></b> guilds in the <b><span
+            id="stats-region"></span></b>
+        region.
+      </p>
+      <p>The <b>least</b> populated<sup>1</sup> <span id="stats-least-world-condi">world is</span> <b><span
+            id="stats-least-world"></span></b>, with <b><span id="stats-least-world-count"></span></b> guilds.</p>
+      <p>The <b>most</b> populated<sup>1</sup> <span id="stats-highest-world-condi">world is</span> <b><span
+            id="stats-highest-world"></span></b>, with <b><span id="stats-highest-world-count"></span></b> guilds.</p>
+      <p id="footnotes">1. By number of guilds only.</p>
+    </div>
+  </template>
+
+  <template id="template-results-legend">
+    <div id="result-legend">
+      <span id="result-legend-count"></span> found for <q><span id="result-legend-query"></span></q>.</span>
+    </div>
+  </template>
+
+  <template id="template-results-legend-nothing">
+    <div id="results-legend-nothing">
+      <q>Why is my guild not on your website?</q> :
+      <p>You did not select your guild as your <q><abbr title="World versus World">WvW</abbr> guild</q>
+        <b>before</b> the <q>team creation lockout</q>.
+      </p><br />
+      <q>How do I do that?</q> :
+      <p>Open your Guilds panel, click on your guild and click on <q>Set as <abbr title="World versus World">WvW</abbr>
+          Guild</q>.</p><br />
+      <q>Now what?</q> :
+      <p><b>If</b> you did everything correctly, your guild will appear on this website at the end of the month.
+      </p><br />
+      <q>But, but, but</q> :
+      <p><a href="https://wiki.guildwars2.com/wiki/Main_Page" target=”_blank”>Guild Wars 2 Wiki</a>, <a
+          href="https://en-forum.guildwars2.com/" target=”_blank”>Guild Wars 2 Forums</a>.</p><br />
+    </div>
+  </template>
+
+  <template id="template-results-legend-fail">
+    <span id="result-legend-fail"></span>
+  </template>
+
   <template id="template-result">
     <div class="result"><span class="result-tag"></span><span class="result-world"></span></div>
   </template>
+
   <template id="template-result-load-all">
     <div id="load-all"><span id="load-all-link">Load All (<span id="result-count"></span>)</span></div>
   </template>
+
   <div id="top">
     <div id="region">
       <label for="select-region">Region:</label><select name="select-region" id="select-region">
@@ -43,11 +92,10 @@
   </div>
   <div id="landing">
     <h1 id="title"><span id="title-highlight">GW2</span>Worlds</h1>
-    <h4 id="description">A database of all the <abbr title="Guild Wars 2">GW2</abbr> guilds assigned to a <abbr
+    <h2 id="description">A database of all the <abbr title="Guild Wars 2">GW2</abbr> guilds assigned to a <abbr
         title="World versus World">WvW</abbr>'s world by the
       game's developers.</h4>
   </div>
-  <div id="results"></div>
   <button id="go-to-top" title="Go to top">Top</button>
 </body>
 
