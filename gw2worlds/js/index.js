@@ -70,13 +70,14 @@ document.querySelector("#select-region").addEventListener("change", async (event
 
   const region = event.target.value.toLowerCase();
 
-  const fetchPromises = [];
-  for (const region of ["eu", "na"]) {
-    if (!Object.hasOwn(LINKS, region)) {
-      fetchPromises.push(loadLinks(region));
-    }
+  if (!Object.hasOwn(LINKS, region)) {
+    await loadLinks(region);
   }
-  await Promise.all(fetchPromises);
+
+  let promisePrefetch;
+  if (!Object.hasOwn(LINKS, region === "eu" ? "na" : "eu")) {
+    promisePrefetch = loadLinks(region === "eu" ? "na" : "eu");
+  }
 
   populateDropDown(region);
   document.querySelector("#last-fetched").textContent = `Updated on ${getLastFetched(region)}`;
@@ -84,6 +85,7 @@ document.querySelector("#select-region").addEventListener("change", async (event
   DEBUG && console.log("2) select-region-listener-change - search-guild-dispatch");
   const elementSearchGuild = document.querySelector("#search-guild");
   elementSearchGuild.dispatchEvent(new Event("search"));
+  await promisePrefetch;
 });
 
 document.querySelector("#select-region").addEventListener("wheel", (event) => {
@@ -193,13 +195,14 @@ async function toURL(prevState) {
     }
   }
 
-  const fetchPromises = [];
-  for (const region of ["eu", "na"]) {
-    if (!Object.hasOwn(LINKS, region)) {
-      fetchPromises.push(loadLinks(region));
-    }
+  if (!Object.hasOwn(LINKS, paramRegion)) {
+    await loadLinks(paramRegion);
   }
-  await Promise.all(fetchPromises);
+
+  let promisePrefetch;
+  if (!Object.hasOwn(LINKS, paramRegion === "eu" ? "na" : "eu")) {
+    promisePrefetch = loadLinks(paramRegion === "eu" ? "na" : "eu");
+  }
 
   populateDropDown(paramRegion);
   document.querySelector("#last-fetched").textContent = `Updated on ${getLastFetched(paramRegion)}`;
@@ -246,6 +249,7 @@ async function toURL(prevState) {
     elementSearchGuild.dispatchEvent(new Event("search"));
   }
 
+  await promisePrefetch;
   return params.size;
 }
 
