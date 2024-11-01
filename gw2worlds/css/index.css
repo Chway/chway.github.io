@@ -48,8 +48,18 @@ body {
 
 #world,
 #search,
-#sort {
+#sort,
+#clear {
   margin-left: 1em;
+}
+
+#clear {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+#clear:hover {
+  text-decoration: none;
 }
 
 #last-fetched {

@@ -6,6 +6,11 @@ tweak html/css
 clean/refacto main code
 more comments
 do not show "Why is my guild.." with results? or make it much less visible, or the results much more visible?
+add a "home" button
+
+fetch api straight from anet? use local as a main source, would need to include guild id in json
+another option is: local only for guild names, remote for world assignation, populate the 2, much easier to maintain
+the json with the guild id will be larger, cut in parts?
 TODO-------------
 */
 
@@ -64,9 +69,15 @@ document.querySelector("#select-region").addEventListener("change", async (event
   DEBUG && console.log(`1) select-region-listener-change (event: ${event})`);
 
   const region = event.target.value.toLowerCase();
-  if (!Object.hasOwn(LINKS, region)) {
-    await loadLinks(region);
+
+  const fetchPromises = [];
+  for (const region of ["eu", "na"]) {
+    if (!Object.hasOwn(LINKS, region)) {
+      fetchPromises.push(loadLinks(region));
+    }
   }
+  await Promise.all(fetchPromises);
+
   populateDropDown(region);
   document.querySelector("#last-fetched").textContent = `Updated on ${getLastFetched(region)}`;
 
@@ -117,6 +128,16 @@ document.querySelector("#search-guild").addEventListener("search", async (event)
 document.querySelector("#search-guild").addEventListener("search-prev", async (event) => {
   DEBUG && console.log(`1) search-guild-listener-search-prev (event: ${event})`);
   await search(event);
+});
+
+document.querySelector("#clear").addEventListener("click", () => {
+  DEBUG && console.log("1) clear-listener");
+  const elementSelectWorld = document.querySelector("#select-world");
+  const elementSearchGuild = document.querySelector("#search-guild");
+  elementSelectWorld.options[0].selected = true;
+  elementSearchGuild.value = "";
+  DEBUG && console.log("2) select-sort-listener - search-guild-dispatch");
+  elementSearchGuild.dispatchEvent(new Event("search"));
 });
 
 function getLastFetched(region) {
@@ -172,9 +193,14 @@ async function toURL(prevState) {
     }
   }
 
-  if (!Object.hasOwn(LINKS, paramRegion)) {
-    await loadLinks(paramRegion);
+  const fetchPromises = [];
+  for (const region of ["eu", "na"]) {
+    if (!Object.hasOwn(LINKS, region)) {
+      fetchPromises.push(loadLinks(region));
+    }
   }
+  await Promise.all(fetchPromises);
+
   populateDropDown(paramRegion);
   document.querySelector("#last-fetched").textContent = `Updated on ${getLastFetched(paramRegion)}`;
 
