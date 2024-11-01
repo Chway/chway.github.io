@@ -7,7 +7,6 @@ clean/refacto main code
 more comments
 do not show "Why is my guild.." with results? or make it much less visible, or the results much more visible?
 add a "home" button
-scrap region from title?
 TODO-------------
 */
 
@@ -164,7 +163,7 @@ async function setURL() {
   const fullRegion = region === "eu" ? "Europe" : "North America";
   const state = { region: region, world: worldId, search: query };
   history.pushState(state, "", `?${paramRegion}${worldId ? paramWorld : ""}${query ? paramSearch : ""}`);
-  document.title = `${query ? `${query} - ` : ""}${worldId ? `${getReadableWorld(worldId, region)} - ` : `${fullRegion} - `}GW2Worlds`;
+  document.title = `${query ? `${query} - ` : ""}${worldId ? `${getReadableWorld(worldId, region)} - ` : ""}GW2Worlds`;
 }
 
 async function toURL(prevState) {
