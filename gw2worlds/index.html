@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="css/modern-normalize.min.css" />
   <link rel="stylesheet" href="css/index.css" />
   <script type="module" src="js/index.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description"
     content="A database of all the GW2 guilds assigned to a WvW's world by the game's developers.">
   <title>Europe - GW2Worlds</title>
@@ -30,6 +31,7 @@
       <p>The <b>most</b> populated<sup>1</sup> <span id="stats-highest-world-condi">world is</span> <b><span
             id="stats-highest-worlds"></span></b>, with <b><span id="stats-highest-world-count"></span></b> guilds.</p>
       <p id="footnotes">1. By number of guilds only.</p>
+      <span id="last-fetched"></span>
     </div>
   </template>
 
@@ -62,40 +64,43 @@
   </template>
 
   <template id="template-result">
-    <div class="result"><span class="result-tag"></span><span class="result-world"></span></div>
+    <div class="result"><span class="result-name"></span>&nbsp;<span class="result-tag"></span><span
+        class="result-world"></span>
+    </div>
   </template>
 
   <template id="template-result-load-all">
     <div id="load-all"><span id="load-all-link">Load All (<span id="result-count"></span>)</span></div>
   </template>
 
-  <div id="top">
-    <div id="region">
-      <label for="select-region">Region:</label><select name="select-region" id="select-region">
-        <option value="EU" selected>EU</option>
-        <option value="NA">NA</option>
-      </select>
+  <div id="container">
+    <div id="top">
+      <div id="region">
+        <label for="select-region">Region:</label><select name="select-region" id="select-region">
+          <option value="EU" selected>EU</option>
+          <option value="NA">NA</option>
+        </select>
+      </div>
+      <div id="world">
+        <label for="select-world">World:</label><select name="select-world" id="select-world"></select>
+      </div>
+      <div id="search">
+        <label for="search-guild">Search:</label><input type="search" name="search-guild" id="search-guild" />
+      </div>
+      <div id="sort">
+        <label for="select-sort">Sorting:</label><select name="select-sort" id="select-sort">
+          <option value="name">Name</option>
+          <option value="tag">Tag</option>
+        </select>
+      </div>
+      <span id="clear">Clear</span>
     </div>
-    <div id="world">
-      <label for="select-world">World:</label><select name="select-world" id="select-world"></select>
+    <div id="landing">
+      <h1 id="title"><span id="title-highlight">GW2</span>Worlds</h1>
+      <h2 id="description">A database of all the <abbr title="Guild Wars 2">GW2</abbr> guilds assigned to a <abbr
+          title="World versus World">WvW</abbr>'s world by the
+        game's developers.</h2>
     </div>
-    <div id="search">
-      <label for="search-guild">Search:</label><input type="search" name="search-guild" id="search-guild" />
-    </div>
-    <div id="sort">
-      <label for="select-sort">Sorting:</label><select name="select-sort" id="select-sort">
-        <option value="name">Name</option>
-        <option value="tag">Tag</option>
-      </select>
-    </div>
-    <span id="clear">Clear</span>
-    <span id="last-fetched"></span>
-  </div>
-  <div id="landing">
-    <h1 id="title"><span id="title-highlight">GW2</span>Worlds</h1>
-    <h2 id="description">A database of all the <abbr title="Guild Wars 2">GW2</abbr> guilds assigned to a <abbr
-        title="World versus World">WvW</abbr>'s world by the
-      game's developers.</h4>
   </div>
   <button id="go-to-top" title="Go to top">Top</button>
 </body>

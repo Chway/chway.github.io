@@ -7,10 +7,6 @@ clean/refacto main code
 more comments
 do not show "Why is my guild.." with results? or make it much less visible, or the results much more visible?
 add a "home" button
-
-fetch api straight from anet? use local as a main source, would need to include guild id in json
-another option is: local only for guild names, remote for world assignation, populate the 2, much easier to maintain
-the json with the guild id will be larger, cut in parts?
 TODO-------------
 */
 
@@ -80,7 +76,6 @@ document.querySelector("#select-region").addEventListener("change", async (event
   }
 
   populateDropDown(region);
-  document.querySelector("#last-fetched").textContent = `Updated on ${getLastFetched(region)}`;
 
   DEBUG && console.log("2) select-region-listener-change - search-guild-dispatch");
   const elementSearchGuild = document.querySelector("#search-guild");
@@ -205,7 +200,6 @@ async function toURL(prevState) {
   }
 
   populateDropDown(paramRegion);
-  document.querySelector("#last-fetched").textContent = `Updated on ${getLastFetched(paramRegion)}`;
 
   for (const region in elementSelectRegion.options) {
     if (elementSelectRegion.options[region].value?.toLowerCase() === paramRegion) {
@@ -316,11 +310,11 @@ function writeToDom(isNext, loadAll, sortedResults, worldId, query) {
   for (const guild of sortedResults.slice(isNext ? 250 : 0, loadAll ? sortedResults.length : 250)) {
     const clone = templateResult.content.cloneNode(true);
     const divResult = clone.querySelector(".result");
+    const spanName = clone.querySelector(".result-name");
     const spanTag = clone.querySelector(".result-tag");
     const spanWorld = clone.querySelector(".result-world");
-    divResult.textContent = `${guild.n}\x20`;
+    spanName.textContent = `${guild.n}`;
     spanTag.textContent = `[${guild.t}]`;
-    divResult.appendChild(spanTag);
 
     if (!worldId) {
       spanWorld.textContent = guild.rw;
@@ -360,7 +354,7 @@ function writeToDom(isNext, loadAll, sortedResults, worldId, query) {
     elementResults.appendChild(clone);
   }
 
-  document.querySelector("body").appendChild(elementResults);
+  document.querySelector("#container").appendChild(elementResults);
   if (!isNext) window.scrollTo(0, 0);
 }
 
@@ -380,6 +374,8 @@ function writeStatsToDom() {
   const spanStatsHighestWorlds = divStats.querySelector("#stats-highest-worlds");
   const spanStatsHighestWorldCondi = divStats.querySelector("#stats-highest-world-condi");
   const spanStatsHighestCount = divStats.querySelector("#stats-highest-world-count");
+  const spanLastFetched = divStats.querySelector("#last-fetched");
+  spanLastFetched.textContent = `Last updated on ${getLastFetched(region)}.`;
   const stats = { regionCount: 0, region: region, leastWorldCount: 0, leastWorld: [], highestWorldCount: 0, highestWorld: [] };
 
   for (const [worldId, guilds] of Object.entries(LINKS[region])) {
@@ -437,7 +433,7 @@ function writeStatsToDom() {
     }
   }
 
-  document.querySelector("body").appendChild(divStats);
+  document.querySelector("#container").appendChild(divStats);
   window.scrollTo(0, 0);
 }
 
