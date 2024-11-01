@@ -76,10 +76,9 @@
   <div id="container">
     <div id="top">
       <div id="region">
-        <label for="select-region">Region:</label><select name="select-region" id="select-region">
-          <option value="EU" selected>EU</option>
-          <option value="NA">NA</option>
-        </select>
+        <span>Region:</span>
+        <input type="radio" name="region" value="eu" id="region-eu" checked />&nbsp;<label for="region-eu">EU</label>
+        <input type="radio" name="region" value="na" id="region-na" />&nbsp;<label for="region-na">NA</label>
       </div>
       <div id="world">
         <label for="select-world">World:</label><select name="select-world" id="select-world"></select>
@@ -88,10 +87,9 @@
         <label for="search-guild">Search:</label><input type="search" name="search-guild" id="search-guild" />
       </div>
       <div id="sort">
-        <label for="select-sort">Sorting:</label><select name="select-sort" id="select-sort">
-          <option value="name">Name</option>
-          <option value="tag">Tag</option>
-        </select>
+        <span>Sorting:</span>
+        <input type="radio" name="sort" value="name" id="sort-name" checked />&nbsp;<label for="sort-name">Name</label>
+        <input type="radio" name="sort" value="tag" id="sort-tag" />&nbsp;<label for="sort-tag">Tag</label>
       </div>
       <span id="clear">Clear</span>
     </div>

@@ -1,3 +1,7 @@
+import search from "./search.js";
+import * as utils from "./utils.js";
+import * as writeDom from "./writeDom.js";
+
 /*
 TODO-------------
 LESS listeners and dispatch, MORE functions ?
@@ -10,10 +14,9 @@ add a "home" button
 TODO-------------
 */
 
-const DEBUG = false;
-const JSONS = { eu: "linksEU.json", na: "linksNA.json" };
-const CURRENT = {}; //? is this obj really necessary?
-const ALLWORLDS = [
+export const DEBUG = false;
+export const JSONS = { eu: "linksEU.json", na: "linksNA.json" };
+export const ALLWORLDS = [
   { id: 11001, en: "Moogooloo" },
   { id: 11002, en: "Rall's Rest" },
   { id: 11003, en: "Domain of Torment" },
@@ -42,8 +45,8 @@ const ALLWORLDS = [
   { id: 12014, en: "Great House Aviary" },
   { id: 12015, en: "Bava Nisos" },
 ];
-const LINKS = {};
-const LASTUPDATE = {};
+export const LINKS = {};
+export const LASTUPDATE = {};
 
 window.onscroll = () => {
   const elementGoToTop = document.querySelector("#go-to-top");
@@ -53,7 +56,7 @@ window.onscroll = () => {
 window.addEventListener("popstate", async (event) => {
   DEBUG && console.log(`1) window-listener-popstate (event: ${event})`);
   const hasParams = await toURL(event.state);
-  if (!hasParams) writeStatsToDom();
+  if (!hasParams) writeDom.writeStats();
 });
 
 document.querySelector("#go-to-top").addEventListener("click", () => {
@@ -61,32 +64,27 @@ document.querySelector("#go-to-top").addEventListener("click", () => {
   window.scrollTo(0, 0);
 });
 
-document.querySelector("#select-region").addEventListener("change", async (event) => {
-  DEBUG && console.log(`1) select-region-listener-change (event: ${event})`);
+document.querySelector("#region").addEventListener("click", async (event) => {
+  DEBUG && console.log(`1) region-listener-click (event: ${event})`);
+  if (!event.target.matches("input[type='radio']")) return;
 
-  const region = event.target.value.toLowerCase();
+  const region = event.target.value;
 
   if (!Object.hasOwn(LINKS, region)) {
-    await loadLinks(region);
+    await utils.loadLinks(region);
   }
 
   let promisePrefetch;
   if (!Object.hasOwn(LINKS, region === "eu" ? "na" : "eu")) {
-    promisePrefetch = loadLinks(region === "eu" ? "na" : "eu");
+    promisePrefetch = utils.loadLinks(region === "eu" ? "na" : "eu");
   }
 
-  populateDropDown(region);
+  utils.populateDropDown(region);
 
-  DEBUG && console.log("2) select-region-listener-change - search-guild-dispatch");
+  DEBUG && console.log("2) region-listener-change - search-guild-dispatch");
   const elementSearchGuild = document.querySelector("#search-guild");
   elementSearchGuild.dispatchEvent(new Event("search"));
   await promisePrefetch;
-});
-
-document.querySelector("#select-region").addEventListener("wheel", (event) => {
-  DEBUG && console.log("1) select-region-listener-wheel");
-  event.preventDefault();
-  handlerSelectScroll(event);
 });
 
 document.querySelector("#select-world").addEventListener("change", () => {
@@ -102,23 +100,18 @@ document.querySelector("#select-world").addEventListener("wheel", (event) => {
   handlerSelectScroll(event);
 });
 
-document.querySelector("#select-sort").addEventListener("change", (event) => {
-  DEBUG && console.log("1) select-sort-listener-change");
-  localStorage.setItem("gw2worlds_sortby", event.target.options[event.target.selectedIndex].value.toLowerCase());
-  DEBUG && console.log("2) select-sort-listener - search-guild-dispatch-prev");
+document.querySelector("#sort").addEventListener("click", async (event) => {
+  DEBUG && console.log(`1) sort-listener-click (event: ${event})`);
+  if (!event.target.matches("input[type='radio']")) return;
+  localStorage.setItem("gw2worlds_sortby", event.target.value);
+  DEBUG && console.log("2) sort-listener - search-guild-dispatch-prev");
   const elementSearchGuild = document.querySelector("#search-guild");
   elementSearchGuild.dispatchEvent(new Event("search-prev"));
 });
 
-document.querySelector("#select-sort").addEventListener("wheel", (event) => {
-  DEBUG && console.log("1) select-sort-listener-wheel");
-  event.preventDefault();
-  handlerSelectScroll(event);
-});
-
 document.querySelector("#search-guild").addEventListener("search", async (event) => {
   DEBUG && console.log(`1) search-guild-listener-search (event: ${event})`);
-  await setURL();
+  await utils.setURL();
   await search(event);
 });
 
@@ -133,37 +126,24 @@ document.querySelector("#clear").addEventListener("click", () => {
   const elementSearchGuild = document.querySelector("#search-guild");
   elementSelectWorld.options[0].selected = true;
   elementSearchGuild.value = "";
-  DEBUG && console.log("2) select-sort-listener - search-guild-dispatch");
+  DEBUG && console.log("2) clear-listener - search-guild-dispatch");
   elementSearchGuild.dispatchEvent(new Event("search"));
 });
 
-function getLastFetched(region) {
-  DEBUG && console.log("1) getLastFetched()");
-  return new Date(LASTUPDATE[region]).toLocaleString(undefined, {
-    timeZoneName: "short",
-    day: "numeric",
-    month: "numeric",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+function handlerSelectScroll(event) {
+  DEBUG && console.log("1) handlerSelectScroll()");
+  // -100: scroll up , 100 : scroll down
+  let nextSelected;
+  if (event.deltaY > 0) {
+    nextSelected = Math.min(event.target.selectedIndex + 1, event.target.options.length - 1);
+  } else {
+    nextSelected = Math.max(event.target.selectedIndex - 1, 0);
+  }
 
-async function setURL() {
-  DEBUG && console.log("1) setURL()");
-  const elementSelectRegion = document.querySelector("#select-region");
-  const elementSelectWorld = document.querySelector("#select-world");
-  const elementSearchGuild = document.querySelector("#search-guild");
-  const region = elementSelectRegion.value.toLowerCase();
-  const worldId = elementSelectWorld.options[elementSelectWorld.selectedIndex]?.dataset.id;
-  const query = elementSearchGuild.value;
-  const paramRegion = `region=${region}`;
-  const paramWorld = `&world=${worldId}`;
-  const paramSearch = `&search=${query}`;
-  const fullRegion = region === "eu" ? "Europe" : "North America";
-  const state = { region: region, world: worldId, search: query };
-  history.pushState(state, "", `?${paramRegion}${worldId ? paramWorld : ""}${query ? paramSearch : ""}`);
-  document.title = `${query ? `${query} - ` : ""}${worldId ? `${getReadableWorld(worldId, region)} - ` : ""}GW2Worlds`;
+  if (event.target.selectedIndex !== nextSelected) {
+    event.target.selectedIndex = nextSelected;
+    event.target.dispatchEvent(new Event("change"));
+  }
 }
 
 async function toURL(prevState) {
@@ -172,41 +152,26 @@ async function toURL(prevState) {
   let paramRegion = prevState ? prevState.region : (params.get("region") || "eu").toLowerCase();
   const paramWorld = prevState ? prevState.world : params.get("world");
   let paramSearch = prevState ? prevState.search : params.get("search");
-  const elementSelectRegion = document.querySelector("#select-region");
   const elementSelectWorld = document.querySelector("#select-world");
   const elementSearchGuild = document.querySelector("#search-guild");
   if (prevState && !prevState.search) paramSearch = "";
-  const notValid = (paramRegion !== "eu" && paramRegion !== "na") || (paramWorld && !getReadableWorld(paramWorld, paramRegion));
+  const notValid = (paramRegion !== "eu" && paramRegion !== "na") || (paramWorld && !utils.getReadableWorld(paramWorld, paramRegion));
   if (paramRegion !== "eu" && paramRegion !== "na") paramRegion = "eu";
 
   const localSortBy = localStorage.getItem("gw2worlds_sortby");
-  const elementSelectSort = document.querySelector("#select-sort");
-  const sortBy = localSortBy ? localSortBy : "name";
-  if (!localSortBy) localStorage.setItem("gw2worlds_sortby", "name");
-  for (const option in elementSelectSort.options) {
-    if (elementSelectSort.options[option].value?.toLowerCase() === sortBy) {
-      elementSelectSort.options[option].selected = true;
-      break;
-    }
-  }
+  utils.setSorting(localSortBy);
 
   if (!Object.hasOwn(LINKS, paramRegion)) {
-    await loadLinks(paramRegion);
+    await utils.loadLinks(paramRegion);
   }
 
   let promisePrefetch;
   if (!Object.hasOwn(LINKS, paramRegion === "eu" ? "na" : "eu")) {
-    promisePrefetch = loadLinks(paramRegion === "eu" ? "na" : "eu");
+    promisePrefetch = utils.loadLinks(paramRegion === "eu" ? "na" : "eu");
   }
 
-  populateDropDown(paramRegion);
-
-  for (const region in elementSelectRegion.options) {
-    if (elementSelectRegion.options[region].value?.toLowerCase() === paramRegion) {
-      elementSelectRegion.options[region].selected = true;
-      break;
-    }
-  }
+  utils.setRegion(paramRegion);
+  utils.populateDropDown(paramRegion);
 
   if (notValid || !paramWorld) {
     elementSelectWorld.options[0].selected = true;
@@ -228,7 +193,7 @@ async function toURL(prevState) {
   }
 
   if (!params.size) {
-    await removeResults();
+    await utils.removeResults();
     elementSearchGuild.value = "";
     return;
   }
@@ -247,291 +212,10 @@ async function toURL(prevState) {
   return params.size;
 }
 
-function getReadableWorld(id, region) {
-  // DEBUG && console.log(`1) getReadableWorld() (id: ${id}, region: ${region})`);
-  if (region && region.toLowerCase() !== "eu" && region && region.toLowerCase() !== "na") return;
-  const regexRegion = region === "na" ? new RegExp(/^11/) : new RegExp(/^12/);
-
-  for (const w of ALLWORLDS) {
-    if (Number.parseInt(id, 10) === w.id) {
-      if (!region || (region && regexRegion.test(w.id))) {
-        return w.en;
-      }
-      break;
-    }
-  }
-}
-
-async function removeResults() {
-  DEBUG && console.log("1) removeResults()");
-  document.querySelector("#results")?.remove();
-  document.querySelector("#stats")?.remove();
-}
-
-function writeToDom(isNext, loadAll, sortedResults, worldId, query) {
-  DEBUG && console.log(`1) writeToDom() (isNext: ${isNext}, loadAll: ${loadAll}, sortedResults: ${typeof sortedResults}, worldId: ${worldId}, query: ${query})`);
-  document.querySelector("#load-all")?.remove();
-
-  let elementResults;
-  let cloneResultLegendNothing;
-  if (isNext) {
-    elementResults = document.querySelector("#results");
-  } else {
-    const templateResults = document.querySelector("#template-results");
-    const cloneResults = templateResults.content.cloneNode(true);
-    elementResults = cloneResults.querySelector("#results");
-
-    const templateResultLegend = document.querySelector("#template-results-legend");
-    const cloneResultsLegend = templateResultLegend.content.cloneNode(true);
-    const divResultLegend = cloneResultsLegend.querySelector("#result-legend");
-    const spanResultCount = cloneResultsLegend.querySelector("#result-legend-count");
-    const spanResultQuery = cloneResultsLegend.querySelector("#result-legend-query");
-    spanResultCount.textContent = `${sortedResults.length ? `${sortedResults.length} guild${sortedResults.length > 1 ? "s" : ""}` : "Nothing"}`;
-    spanResultQuery.textContent = query ? query : getReadableWorld(worldId);
-
-    if (query && query.length < 2) {
-      const templateResultLegendFail = document.querySelector("#template-results-legend-fail");
-      const cloneResultLegendFail = templateResultLegendFail.content.cloneNode(true);
-      const spanResultLegendFail = cloneResultLegendFail.querySelector("#result-legend-fail");
-      spanResultLegendFail.textContent = "Your query must contain atleast 2 characters.";
-      divResultLegend.appendChild(spanResultLegendFail);
-    }
-
-    elementResults.appendChild(cloneResultsLegend);
-  }
-
-  if (isNext || (query && query.length >= 2)) {
-    const templateResultLegendNothing = document.querySelector("#template-results-legend-nothing");
-    cloneResultLegendNothing = templateResultLegendNothing.content.cloneNode(true);
-  }
-
-  const fragment = new DocumentFragment();
-  const templateResult = document.querySelector("#template-result");
-  for (const guild of sortedResults.slice(isNext ? 250 : 0, loadAll ? sortedResults.length : 250)) {
-    const clone = templateResult.content.cloneNode(true);
-    const divResult = clone.querySelector(".result");
-    const spanName = clone.querySelector(".result-name");
-    const spanTag = clone.querySelector(".result-tag");
-    const spanWorld = clone.querySelector(".result-world");
-    spanName.textContent = `${guild.n}`;
-    spanTag.textContent = `[${guild.t}]`;
-
-    if (!worldId) {
-      spanWorld.textContent = guild.rw;
-      spanWorld.addEventListener("click", (event) => {
-        const elementSelectWorld = document.querySelector("#select-world");
-        const elementSearchGuild = document.querySelector("#search-guild");
-        for (const world in elementSelectWorld.options) {
-          if (elementSelectWorld.options[world].value === event.target.textContent) {
-            elementSearchGuild.value = "";
-            elementSelectWorld.options[world].selected = true;
-            elementSearchGuild.dispatchEvent(new Event("search"));
-            return;
-          }
-        }
-      });
-      divResult.appendChild(spanWorld);
-    } else {
-      spanWorld.remove();
-    }
-    fragment.append(clone);
-  }
-
-  elementResults.appendChild(fragment);
-  if (cloneResultLegendNothing) elementResults.appendChild(cloneResultLegendNothing);
-
-  if (!loadAll && sortedResults.length > 30) {
-    const templateResultLoadAll = document.querySelector("#template-result-load-all");
-    const clone = templateResultLoadAll.content.cloneNode(true);
-    const spanLoadAllLink = clone.querySelector("#load-all-link");
-    const spanResultCount = clone.querySelector("#result-count");
-
-    spanLoadAllLink.addEventListener("click", () => {
-      writeToDom(true, true, CURRENT.sortedResults, CURRENT.worldId);
-    });
-
-    spanResultCount.textContent = sortedResults.length;
-    elementResults.appendChild(clone);
-  }
-
-  document.querySelector("#container").appendChild(elementResults);
-  if (!isNext) window.scrollTo(0, 0);
-}
-
-function writeStatsToDom() {
-  DEBUG && console.log("1) writeStatsToDom()");
-  const elementSelectRegion = document.querySelector("#select-region");
-  const region = elementSelectRegion.options[elementSelectRegion.selectedIndex].value.toLowerCase();
-
-  const templateStats = document.querySelector("#template-stats");
-  const cloneStats = templateStats.content.cloneNode(true);
-  const divStats = cloneStats.querySelector("#stats");
-  const spanStatsRegionCount = divStats.querySelector("#stats-region-count");
-  const spanStatsRegion = divStats.querySelector("#stats-region");
-  const spanStatsLeastWorlds = divStats.querySelector("#stats-least-worlds");
-  const spanStatsLeastWorldCondi = divStats.querySelector("#stats-least-world-condi");
-  const spanStatsLeastWorldCount = divStats.querySelector("#stats-least-world-count");
-  const spanStatsHighestWorlds = divStats.querySelector("#stats-highest-worlds");
-  const spanStatsHighestWorldCondi = divStats.querySelector("#stats-highest-world-condi");
-  const spanStatsHighestCount = divStats.querySelector("#stats-highest-world-count");
-  const spanLastFetched = divStats.querySelector("#last-fetched");
-  spanLastFetched.textContent = `Last updated on ${getLastFetched(region)}.`;
-  const stats = { regionCount: 0, region: region, leastWorldCount: 0, leastWorld: [], highestWorldCount: 0, highestWorld: [] };
-
-  for (const [worldId, guilds] of Object.entries(LINKS[region])) {
-    stats.regionCount = stats.regionCount + guilds.length;
-    const readableWorld = getReadableWorld(worldId, region);
-
-    if (guilds.length === stats.leastWorldCount) {
-      stats.leastWorld.push({ name: readableWorld, id: worldId });
-    } else if (guilds.length === stats.highestWorldCount) {
-      stats.highestWorld.push({ name: readableWorld, id: worldId });
-    } else if (stats.leastWorldCount === 0 || guilds.length < stats.leastWorldCount) {
-      stats.leastWorldCount = guilds.length;
-      stats.leastWorld = [{ name: readableWorld, id: worldId }];
-    } else if (stats.highestWorldCount === 0 || guilds.length > stats.highestWorldCount) {
-      stats.highestWorldCount = guilds.length;
-      stats.highestWorld = [{ name: readableWorld, id: worldId }];
-    }
-  }
-
-  spanStatsRegionCount.textContent = stats.regionCount.toLocaleString();
-  spanStatsRegion.textContent = stats.region === "eu" ? "European" : "North American";
-  spanStatsLeastWorldCondi.textContent = stats.leastWorld.length > 1 ? "worlds are" : "world is";
-  spanStatsLeastWorldCount.textContent = stats.leastWorldCount.toLocaleString();
-  spanStatsHighestWorldCondi.textContent = stats.leastWorld.length > 1 ? "worlds are" : "world is";
-  spanStatsHighestCount.textContent = stats.highestWorldCount.toLocaleString();
-
-  const objLessHigh = [
-    { element: spanStatsLeastWorlds, arr: stats.leastWorld },
-    { element: spanStatsHighestWorlds, arr: stats.highestWorld },
-  ];
-
-  for (const type of objLessHigh) {
-    for (const i in type.arr) {
-      const span = document.createElement("span");
-      span.textContent = type.arr[i].name;
-
-      span.addEventListener("click", () => {
-        const selectWorld = document.querySelector("#select-world");
-        const searchGuild = document.querySelector("#search-guild");
-        for (const x in selectWorld.options) {
-          if (selectWorld.options[x].value === type.arr[i].name) {
-            selectWorld.options[x].selected = true;
-            searchGuild.dispatchEvent(new Event("search"));
-            break;
-          }
-        }
-      });
-
-      type.element.appendChild(span);
-
-      if (i < type.arr.length - 1) {
-        const nextStr = i < type.arr.length - 2 ? ",\x20" : ",\x20and\x20";
-        type.element.appendChild(nextStr);
-      }
-    }
-  }
-
-  document.querySelector("#container").appendChild(divStats);
-  window.scrollTo(0, 0);
-}
-
-async function search(event) {
-  DEBUG && console.log(`1) search() (${event})`);
-  const promiseRemoveResults = removeResults();
-
-  const elementSelectWorld = document.querySelector("#select-world");
-  const worldId = elementSelectWorld.options[elementSelectWorld.selectedIndex]?.dataset.id;
-
-  if (!event.target.value && !worldId) {
-    await promiseRemoveResults;
-    writeStatsToDom();
-    return;
-  }
-
-  if (event.target.value && event.target.value.length < 2) {
-    await promiseRemoveResults;
-    writeToDom(false, Boolean(event.target.value), [], worldId, event.target.value);
-    return;
-  }
-
-  const query = event.target.value.toLowerCase().replace(/[/\-\\^$*+?.()|[\]{}]/g, "\\$&");
-  const elementSelectRegion = document.querySelector("#select-region");
-  const region = elementSelectRegion.value.toLowerCase();
-  const sortBy = localStorage.getItem("gw2worlds_sortby");
-  const regex = new RegExp(`(?:(?:^|\\s)${query}s?(?:$|\\s)|(?:^|\\s|\\[)${query}(?:$|\\s|\\]))`, "i");
-
-  let result = [];
-  if (query && !worldId) {
-    result = Object.entries(LINKS[region]).reduce((accu, [world, guilds]) => {
-      for (const guild of guilds) {
-        if (query && !regex.test(`${guild.n} [${guild.t}]`)) continue;
-        accu.push({ ...guild, ...{ rw: getReadableWorld(world, region) } });
-      }
-      return accu;
-    }, []);
-  } else if (query && worldId) {
-    result = LINKS[region][Number.parseInt(worldId, 10)].filter((guild) => regex.test(`${guild.n} [${guild.t}]`));
-  } else if (!query && worldId) {
-    result = LINKS[region][Number.parseInt(worldId, 10)];
-  }
-
-  const sortedResults = sortBy === "name" ? result.sort((a, b) => a.n.trim().localeCompare(b.n.trim())) : result.sort((a, b) => a.t.localeCompare(b.t));
-  CURRENT.sortedResults = sortedResults;
-  CURRENT.worldId = worldId;
-
-  writeToDom(false, Boolean(query), sortedResults, worldId, event.target.value);
-  await promiseRemoveResults;
-}
-
-function handlerSelectScroll(event) {
-  DEBUG && console.log("1) handlerSelectScroll()");
-  // -100: scroll up , 100 : scroll down
-  let nextSelected;
-  if (event.deltaY > 0) {
-    nextSelected = Math.min(event.target.selectedIndex + 1, event.target.options.length - 1);
-  } else {
-    nextSelected = Math.max(event.target.selectedIndex - 1, 0);
-  }
-
-  if (event.target.selectedIndex !== nextSelected) {
-    event.target.selectedIndex = nextSelected;
-    event.target.dispatchEvent(new Event("change"));
-  }
-}
-
-function populateDropDown(region) {
-  DEBUG && console.log(`1) populateDropdown() (region: ${region})`);
-  const selectWorld = document.querySelector("#select-world");
-  selectWorld.options.length = 0;
-  const option = document.createElement("option");
-  selectWorld.add(option);
-  selectWorld.selected = true;
-
-  const regexRegion = region === "na" ? new RegExp(/^11/) : new RegExp(/^12/);
-  const sorted = ALLWORLDS.sort((a, b) => a.en.localeCompare(b.en));
-  for (const world of sorted) {
-    if (!regexRegion.test(world.id)) continue;
-    const option = document.createElement("option");
-    option.text = world.en;
-    option.dataset.id = world.id;
-    selectWorld.add(option);
-  }
-}
-
-async function loadLinks(region) {
-  DEBUG && console.log(`1) loadLinks() (region: ${region})`);
-  const response = await fetch(JSONS[region]);
-  const json = await response.json();
-  LINKS[region] = json.worlds;
-  LASTUPDATE[region] = json.lastModified;
-}
-
 async function Job() {
   DEBUG && console.log("1) Job()");
   const hasParams = await toURL();
-  if (!hasParams) writeStatsToDom();
+  if (!hasParams) writeDom.writeStats();
 }
 
 await Job();
