@@ -7,6 +7,7 @@ clean/refacto main code
 more comments
 do not show "Why is my guild.." with results? or make it much less visible, or the results much more visible?
 add a "home" button
+scrap region from title?
 TODO-------------
 */
 
