@@ -8,24 +8,27 @@
 			if (!Object.hasOwn(self, "browser")) { self.browser = self.chrome; }
 
 			const extensionId = "fcbcpllpoofphagdfjjobeempnepkpom";
-			const hash = window.location.hash.substring(1); // remove leading #
-			const params = new URLSearchParams(hash);
 
+			const params = new URLSearchParams(
+				window.location.hash.substring(1) || window.location.search
+			);
+
+			const code = params.get("code");
 			const oAuthToken = params.get("access_token");
-			const state = params.get("state"); // <-- read state
+			const state = params.get("state");
 
-			if (oAuthToken && state) {
+			if ((code || oAuthToken) && state) {
 				try {
 					browser.runtime.sendMessage(extensionId, {
 						type: "OAUTH_EXTERNAL_SUCCESS",
-						token: oAuthToken,
-						state: state // <-- send state back for validation
+						token: code ?? oAuthToken,
+						state: state
 					});
 				} catch (e) {
 					console.error("Could not send message to extension:", e);
 				}
 			} else {
-				console.error("Authentication failed or token/state not found.", hash);
+				console.error("Authentication failed or token/state not found.", params.toString());
 				browser.runtime.sendMessage(extensionId, {
 					type: "OAUTH_EXTERNAL_FAILURE",
 					error: "Token or state missing"
@@ -37,6 +40,7 @@
 
 		handleAuthCallback();
 	</script>
+
 </head>
 
 <body>
