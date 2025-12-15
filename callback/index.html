@@ -7,6 +7,7 @@
 		function handleAuthCallback() {
 			if (!Object.hasOwn(self, "browser")) { self.browser = self.chrome; }
 
+			const extensionId = "fcbcpllpoofphagdfjjobeempnepkpom";
 			const hash = window.location.hash.substring(1); // remove leading #
 			const params = new URLSearchParams(hash);
 
@@ -15,8 +16,8 @@
 
 			if (oAuthToken && state) {
 				try {
-					browser.runtime.sendMessage("fcbcpllpoofphagdfjjobeempnepkpom", {
-						type: "TWITCH_EXTERNAL_SUCCESS",
+					browser.runtime.sendMessage(extensionId, {
+						type: "OAUTH_EXTERNAL_SUCCESS",
 						token: oAuthToken,
 						state: state // <-- send state back for validation
 					});
@@ -25,8 +26,8 @@
 				}
 			} else {
 				console.error("Authentication failed or token/state not found.", hash);
-				browser.runtime.sendMessage("fcbcpllpoofphagdfjjobeempnepkpom", {
-					type: "TWITCH_EXTERNAL_FAILURE",
+				browser.runtime.sendMessage(extensionId, {
+					type: "OAUTH_EXTERNAL_FAILURE",
 					error: "Token or state missing"
 				});
 			}
