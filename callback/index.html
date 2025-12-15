@@ -13,19 +13,15 @@
 				window.location.hash.substring(1) || window.location.search
 			);
 
-			console.log(0, params)
-
 			const code = params.get("code");
 			const oAuthToken = params.get("access_token");
 			const state = params.get("state");
-
-			console.log(1, code, oAuthToken, state)
 
 			if ((code || oAuthToken) && state) {
 				try {
 					browser.runtime.sendMessage(extensionId, {
 						type: "OAUTH_EXTERNAL_SUCCESS",
-						token: code ?? oAuthToken,
+						code: code ?? oAuthToken,
 						state: state
 					});
 				} catch (e) {
