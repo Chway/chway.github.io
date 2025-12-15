@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Authentication Success</title>
+	<script>
+		function handleAuthCallback() {
+			if (!Object.hasOwn(self, "browser")) { self.browser = self.chrome; }
+
+			const hash = window.location.hash;
+			console.log(hash, window.location)
+			const oAuthToken = hash.match(/#access_token=([^&]+)/)?.[1];
+
+			if (oAuthToken) {
+				try {
+					browser.runtime.sendMessage(
+						{
+							type: "TWITCH_EXTERNAL_SUCCESS",
+							token: oAuthToken
+						}
+					);
+				} catch (e) {
+					console.error("Could not send message to extension:", e);
+				}
+			} else {
+				console.error("Authentication failed or token not found.", hash);
+			}
+
+			// window.close();
+		}
+
+		handleAuthCallback();
+	</script>
+</head>
+
+<body>
+	<h1>Processing Authentication...</h1>
+	<p>Please wait...</p>
+</body>
+
+</html>
