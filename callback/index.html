@@ -7,25 +7,31 @@
 		function handleAuthCallback() {
 			if (!Object.hasOwn(self, "browser")) { self.browser = self.chrome; }
 
-			const hash = window.location.hash;
-			console.log(hash, window.location)
-			const oAuthToken = hash.match(/#access_token=([^&]+)/)?.[1];
+			const hash = window.location.hash.substring(1); // remove leading #
+			const params = new URLSearchParams(hash);
 
-			if (oAuthToken) {
+			const oAuthToken = params.get("access_token");
+			const state = params.get("state"); // <-- read state
+
+			if (oAuthToken && state) {
 				try {
-					browser.runtime.sendMessage(
-						{
-							type: "TWITCH_EXTERNAL_SUCCESS",
-							token: oAuthToken
-						}
-					);
+					browser.runtime.sendMessage({
+						type: "TWITCH_EXTERNAL_SUCCESS",
+						token: oAuthToken,
+						state: state // <-- send state back for validation
+					});
 				} catch (e) {
 					console.error("Could not send message to extension:", e);
 				}
 			} else {
-				console.error("Authentication failed or token not found.", hash);
+				console.error("Authentication failed or token/state not found.", hash);
+				browser.runtime.sendMessage({
+					type: "TWITCH_EXTERNAL_FAILURE",
+					error: "Token or state missing"
+				});
 			}
 
+			// Optionally close the tab
 			// window.close();
 		}
 
