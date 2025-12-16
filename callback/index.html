@@ -4,10 +4,13 @@
 <head>
 	<title>Authentication Success</title>
 	<script>
-		if (!Object.hasOwn(self, "browser")) self.browser = self.chrome;
-		const extensionId = "fcbcpllpoofphagdfjjobeempnepkpom";
-		browser.runtime.sendMessage(extensionId, { type: "RETURN_CALLBACK", url: window.location.href });
-		window.close();
+	  // Post the current URL to the content script
+	  window.postMessage({
+		type: "RETURN_CALLBACK",
+		url: window.location.href
+	  }, "*");
+
+	  window.close();
 	</script>
 
 </head>
